@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package muxcore.books.v1;
+
+option go_package = "github.com/Muxcore-Media/media-books/proto/gen/muxcore/books/v1;booksv1";
+
+// BookManagementService is a Readarr-class book library manager (scaffold).
+service BookManagementService {
+  rpc AddAuthor(AddAuthorRequest) returns (AddAuthorResponse);
+  rpc GetAuthor(GetAuthorRequest) returns (GetAuthorResponse);
+  rpc ListAuthors(ListAuthorsRequest) returns (ListAuthorsResponse);
+  rpc RemoveAuthor(RemoveAuthorRequest) returns (RemoveAuthorResponse);
+  rpc AddBook(AddBookRequest) returns (AddBookResponse);
+  rpc ListBooks(ListBooksRequest) returns (ListBooksResponse);
+}
+
+message Author {
+  string id = 1;
+  string name = 2;
+  string goodreads_id = 3;
+  bool monitored = 4;
+  string path = 5;
+}
+
+message Book {
+  string id = 1;
+  string author_id = 2;
+  string title = 3;
+  string isbn = 4;
+  int32 year = 5;
+  bool monitored = 6;
+}
+
+message AddAuthorRequest {
+  string name = 1;
+  string goodreads_id = 2;
+  bool monitored = 3;
+  string path = 4;
+}
+message AddAuthorResponse { Author author = 1; }
+message GetAuthorRequest { string id = 1; }
+message GetAuthorResponse { Author author = 1; }
+message ListAuthorsRequest { string query = 1; }
+message ListAuthorsResponse { repeated Author authors = 1; }
+message RemoveAuthorRequest { string id = 1; bool delete_files = 2; }
+message RemoveAuthorResponse { bool success = 1; }
+
+message AddBookRequest {
+  string author_id = 1;
+  string title = 2;
+  string isbn = 3;
+  int32 year = 4;
+  bool monitored = 5;
+}
+message AddBookResponse { Book book = 1; }
+message ListBooksRequest { string author_id = 1; }
+message ListBooksResponse { repeated Book books = 1; }

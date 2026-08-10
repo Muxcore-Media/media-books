@@ -1,0 +1,8 @@
+{
+  "id": "media-books",
+  "name": "Book Manager",
+  "version": "0.1.0",
+  "description": "Readarr-class book library manager scaffold",
+  "roles": ["media", "books"],
+  "capabilities": ["media.books", "books", "settings"]
+}
