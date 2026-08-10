@@ -1,0 +1,183 @@
+package internal
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"net"
+	"net/http"
+	"os"
+	"sync"
+
+	"google.golang.org/grpc"
+
+	"github.com/Muxcore-Media/core/pkg/contracts"
+	modulesdk "github.com/Muxcore-Media/core/sdk/go/module"
+	booksv1 "github.com/Muxcore-Media/media-books/proto/gen/muxcore/books/v1"
+)
+
+type Module struct {
+	id, grpcAddr, httpAddr, libraryDir string
+	cfgMu                              sync.RWMutex
+	store                              *Store
+	grpcSrv                            *grpc.Server
+	lis                                net.Listener
+	httpSrv                            *http.Server
+}
+
+type Config struct {
+	ID, LibraryDir, GRPCAddr, HTTPAddr string
+}
+
+func NewModule(cfg Config) *Module {
+	if cfg.ID == "" {
+		cfg.ID = "media-books"
+	}
+	if cfg.GRPCAddr == "" {
+		cfg.GRPCAddr = ":9650"
+	}
+	if cfg.HTTPAddr == "" {
+		cfg.HTTPAddr = ":9651"
+	}
+	if v := os.Getenv("BOOKS_LIBRARY_DIR"); v != "" {
+		cfg.LibraryDir = v
+	}
+	if v := os.Getenv("MUXCORE_HTTP_ADDR"); v != "" {
+		cfg.HTTPAddr = v
+	}
+	if cfg.LibraryDir == "" {
+		cfg.LibraryDir = "./data/books"
+	}
+	return &Module{
+		id: cfg.ID, grpcAddr: cfg.GRPCAddr, httpAddr: cfg.HTTPAddr,
+		libraryDir: cfg.LibraryDir, store: NewStore(),
+	}
+}
+
+func (m *Module) Info() contracts.ModuleInfo {
+	return contracts.ModuleInfo{
+		ID: m.id, Name: "Book Manager", Version: "0.1.0",
+		Roles:        []string{"media", "books"},
+		Description:  "Readarr-class book library manager (scaffold)",
+		Capabilities: []string{"media.books", "books", "settings"},
+		HTTPAddr:     m.grpcAddr,
+	}
+}
+
+func (m *Module) Init(ctx context.Context) error { return nil }
+
+func (m *Module) Start(ctx context.Context) error {
+	lis, err := net.Listen("tcp", m.grpcAddr)
+	if err != nil {
+		return fmt.Errorf("listen gRPC %s: %w", m.grpcAddr, err)
+	}
+	m.lis = lis
+	m.grpcSrv = grpc.NewServer()
+	booksv1.RegisterBookManagementServiceServer(m.grpcSrv, &bookServer{m: m})
+	modulesdk.RegisterSettings(m.grpcSrv, m.id, m)
+	go func() {
+		slog.Info("books gRPC listening", "addr", m.grpcAddr)
+		if err := m.grpcSrv.Serve(lis); err != nil {
+			slog.Error("gRPC serve", "error", err)
+		}
+	}()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+	m.httpSrv = &http.Server{Addr: m.httpAddr, Handler: mux}
+	go func() {
+		slog.Info("health listening", "addr", m.httpAddr)
+		if err := m.httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error("health serve", "error", err)
+		}
+	}()
+	return nil
+}
+
+func (m *Module) Stop(ctx context.Context) error {
+	if m.grpcSrv != nil {
+		m.grpcSrv.GracefulStop()
+	}
+	if m.httpSrv != nil {
+		_ = m.httpSrv.Shutdown(ctx)
+	}
+	return nil
+}
+
+func (m *Module) Health(ctx context.Context) error { return nil }
+
+type bookServer struct {
+	booksv1.UnimplementedBookManagementServiceServer
+	m *Module
+}
+
+func (s *bookServer) AddAuthor(_ context.Context, req *booksv1.AddAuthorRequest) (*booksv1.AddAuthorResponse, error) {
+	a, err := s.m.store.AddAuthor(Author{
+		Name: req.GetName(), GoodreadsID: req.GetGoodreadsId(),
+		Monitored: req.GetMonitored(), Path: req.GetPath(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &booksv1.AddAuthorResponse{Author: toPBAuthor(a)}, nil
+}
+
+func (s *bookServer) GetAuthor(_ context.Context, req *booksv1.GetAuthorRequest) (*booksv1.GetAuthorResponse, error) {
+	a, err := s.m.store.GetAuthor(req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	return &booksv1.GetAuthorResponse{Author: toPBAuthor(a)}, nil
+}
+
+func (s *bookServer) ListAuthors(_ context.Context, req *booksv1.ListAuthorsRequest) (*booksv1.ListAuthorsResponse, error) {
+	items := s.m.store.ListAuthors(req.GetQuery())
+	out := make([]*booksv1.Author, 0, len(items))
+	for _, a := range items {
+		out = append(out, toPBAuthor(a))
+	}
+	return &booksv1.ListAuthorsResponse{Authors: out}, nil
+}
+
+func (s *bookServer) RemoveAuthor(_ context.Context, req *booksv1.RemoveAuthorRequest) (*booksv1.RemoveAuthorResponse, error) {
+	if err := s.m.store.RemoveAuthor(req.GetId()); err != nil {
+		return nil, err
+	}
+	return &booksv1.RemoveAuthorResponse{Success: true}, nil
+}
+
+func (s *bookServer) AddBook(_ context.Context, req *booksv1.AddBookRequest) (*booksv1.AddBookResponse, error) {
+	b, err := s.m.store.AddBook(Book{
+		AuthorID: req.GetAuthorId(), Title: req.GetTitle(),
+		ISBN: req.GetIsbn(), Year: req.GetYear(), Monitored: req.GetMonitored(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &booksv1.AddBookResponse{Book: toPBBook(b)}, nil
+}
+
+func (s *bookServer) ListBooks(_ context.Context, req *booksv1.ListBooksRequest) (*booksv1.ListBooksResponse, error) {
+	items := s.m.store.ListBooks(req.GetAuthorId())
+	out := make([]*booksv1.Book, 0, len(items))
+	for _, b := range items {
+		out = append(out, toPBBook(b))
+	}
+	return &booksv1.ListBooksResponse{Books: out}, nil
+}
+
+func toPBAuthor(a *Author) *booksv1.Author {
+	return &booksv1.Author{
+		Id: a.ID, Name: a.Name, GoodreadsId: a.GoodreadsID,
+		Monitored: a.Monitored, Path: a.Path,
+	}
+}
+
+func toPBBook(b *Book) *booksv1.Book {
+	return &booksv1.Book{
+		Id: b.ID, AuthorId: b.AuthorID, Title: b.Title,
+		Isbn: b.ISBN, Year: b.Year, Monitored: b.Monitored,
+	}
+}
