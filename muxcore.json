@@ -1,8 +1,8 @@
 {
   "id": "media-books",
   "name": "Book Manager",
-  "version": "0.1.0",
-  "description": "Readarr-class book library manager scaffold",
+  "version": "0.2.0",
+  "description": "Readarr-class book library manager with SQLite persistence",
   "roles": ["media", "books"],
   "capabilities": ["media.books", "books", "settings"]
 }
