@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -17,16 +18,26 @@ import (
 )
 
 type Module struct {
-	id, grpcAddr, httpAddr, libraryDir string
-	cfgMu                              sync.RWMutex
-	store                              *Store
-	grpcSrv                            *grpc.Server
-	lis                                net.Listener
-	httpSrv                            *http.Server
+	id         string
+	grpcAddr   string
+	httpAddr   string
+	dataDir    string
+	libraryDir string
+
+	cfgMu sync.RWMutex
+	store *Store
+
+	grpcSrv *grpc.Server
+	lis     net.Listener
+	httpSrv *http.Server
 }
 
 type Config struct {
-	ID, LibraryDir, GRPCAddr, HTTPAddr string
+	ID         string
+	DataDir    string
+	LibraryDir string
+	GRPCAddr   string
+	HTTPAddr   string
 }
 
 func NewModule(cfg Config) *Module {
@@ -39,39 +50,64 @@ func NewModule(cfg Config) *Module {
 	if cfg.HTTPAddr == "" {
 		cfg.HTTPAddr = ":9651"
 	}
+	if v := os.Getenv("BOOKS_DATA_DIR"); v != "" {
+		cfg.DataDir = v
+	}
 	if v := os.Getenv("BOOKS_LIBRARY_DIR"); v != "" {
 		cfg.LibraryDir = v
 	}
 	if v := os.Getenv("MUXCORE_HTTP_ADDR"); v != "" {
 		cfg.HTTPAddr = v
 	}
+	if cfg.DataDir == "" {
+		cfg.DataDir = "./data"
+	}
 	if cfg.LibraryDir == "" {
-		cfg.LibraryDir = "./data/books"
+		cfg.LibraryDir = filepath.Join(cfg.DataDir, "books")
 	}
 	return &Module{
 		id: cfg.ID, grpcAddr: cfg.GRPCAddr, httpAddr: cfg.HTTPAddr,
-		libraryDir: cfg.LibraryDir, store: NewStore(),
+		dataDir: cfg.DataDir, libraryDir: cfg.LibraryDir,
 	}
 }
 
 func (m *Module) Info() contracts.ModuleInfo {
 	return contracts.ModuleInfo{
-		ID: m.id, Name: "Book Manager", Version: "0.1.0",
+		ID: m.id, Name: "Book Manager", Version: "0.2.0",
 		Roles:        []string{"media", "books"},
-		Description:  "Readarr-class book library manager (scaffold)",
+		Description:  "Readarr-class book library manager with SQLite persistence",
 		Capabilities: []string{"media.books", "books", "settings"},
 		HTTPAddr:     m.grpcAddr,
 	}
 }
 
-func (m *Module) Init(ctx context.Context) error { return nil }
+func (m *Module) Init(ctx context.Context) error {
+	if err := os.MkdirAll(m.dataDir, 0o700); err != nil {
+		return fmt.Errorf("create data dir: %w", err)
+	}
+	if err := os.MkdirAll(m.libraryDir, 0o700); err != nil {
+		return fmt.Errorf("create library dir: %w", err)
+	}
+	dbPath := filepath.Join(m.dataDir, "books.db")
+	store, err := OpenStore(dbPath)
+	if err != nil {
+		return err
+	}
+	m.store = store
+	slog.Info("book library store open", "db", dbPath, "library", m.libraryDir)
+	return nil
+}
 
 func (m *Module) Start(ctx context.Context) error {
+	if m.store == nil {
+		return fmt.Errorf("store not initialized")
+	}
 	lis, err := net.Listen("tcp", m.grpcAddr)
 	if err != nil {
 		return fmt.Errorf("listen gRPC %s: %w", m.grpcAddr, err)
 	}
 	m.lis = lis
+	m.grpcAddr = lis.Addr().String()
 	m.grpcSrv = grpc.NewServer()
 	booksv1.RegisterBookManagementServiceServer(m.grpcSrv, &bookServer{m: m})
 	modulesdk.RegisterSettings(m.grpcSrv, m.id, m)
@@ -86,15 +122,27 @@ func (m *Module) Start(ctx context.Context) error {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
-	m.httpSrv = &http.Server{Addr: m.httpAddr, Handler: mux}
+	m.registerBooksHTTPAPI(mux)
+	httpLis, err := net.Listen("tcp", m.httpAddr)
+	if err != nil {
+		return fmt.Errorf("listen HTTP %s: %w", m.httpAddr, err)
+	}
+	m.httpAddr = httpLis.Addr().String()
+	m.httpSrv = &http.Server{Handler: mux}
 	go func() {
 		slog.Info("health listening", "addr", m.httpAddr)
-		if err := m.httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := m.httpSrv.Serve(httpLis); err != nil && err != http.ErrServerClosed {
 			slog.Error("health serve", "error", err)
 		}
 	}()
 	return nil
 }
+
+// GRPCListenAddr returns the bound gRPC address after Start.
+func (m *Module) GRPCListenAddr() string { return m.grpcAddr }
+
+// HTTPListenAddr returns the bound health/HTTP API address after Start.
+func (m *Module) HTTPListenAddr() string { return m.httpAddr }
 
 func (m *Module) Stop(ctx context.Context) error {
 	if m.grpcSrv != nil {
@@ -103,10 +151,31 @@ func (m *Module) Stop(ctx context.Context) error {
 	if m.httpSrv != nil {
 		_ = m.httpSrv.Shutdown(ctx)
 	}
+	if m.store != nil {
+		_ = m.store.Close()
+		m.store = nil
+	}
 	return nil
 }
 
-func (m *Module) Health(ctx context.Context) error { return nil }
+func (m *Module) Health(ctx context.Context) error {
+	if m.store == nil {
+		return fmt.Errorf("store not open")
+	}
+	return nil
+}
+
+// ScanLibrary scans the configured library root into SQLite.
+func (m *Module) ScanLibrary() (*ScanResult, error) {
+	m.cfgMu.RLock()
+	root := m.libraryDir
+	store := m.store
+	m.cfgMu.RUnlock()
+	if store == nil {
+		return nil, fmt.Errorf("store not open")
+	}
+	return store.ScanLibraryRoot(root)
+}
 
 type bookServer struct {
 	booksv1.UnimplementedBookManagementServiceServer
@@ -133,7 +202,10 @@ func (s *bookServer) GetAuthor(_ context.Context, req *booksv1.GetAuthorRequest)
 }
 
 func (s *bookServer) ListAuthors(_ context.Context, req *booksv1.ListAuthorsRequest) (*booksv1.ListAuthorsResponse, error) {
-	items := s.m.store.ListAuthors(req.GetQuery())
+	items, err := s.m.store.ListAuthors(req.GetQuery())
+	if err != nil {
+		return nil, err
+	}
 	out := make([]*booksv1.Author, 0, len(items))
 	for _, a := range items {
 		out = append(out, toPBAuthor(a))
@@ -160,7 +232,10 @@ func (s *bookServer) AddBook(_ context.Context, req *booksv1.AddBookRequest) (*b
 }
 
 func (s *bookServer) ListBooks(_ context.Context, req *booksv1.ListBooksRequest) (*booksv1.ListBooksResponse, error) {
-	items := s.m.store.ListBooks(req.GetAuthorId())
+	items, err := s.m.store.ListBooks(req.GetAuthorId())
+	if err != nil {
+		return nil, err
+	}
 	out := make([]*booksv1.Book, 0, len(items))
 	for _, b := range items {
 		out = append(out, toPBBook(b))
