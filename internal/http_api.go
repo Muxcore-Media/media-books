@@ -10,6 +10,7 @@ func (m *Module) registerBooksHTTPAPI(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/authors", m.handleListAuthorsHTTP)
 	mux.HandleFunc("GET /api/authors/{id}", m.handleGetAuthorHTTP)
 	mux.HandleFunc("GET /api/books", m.handleListBooksHTTP)
+	mux.HandleFunc("GET /api/files/{id}/stream", m.handleStreamBookFileHTTP)
 }
 
 func (m *Module) handleListAuthorsHTTP(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +56,7 @@ func (m *Module) handleGetAuthorHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	detail := authorDetailJSON{Author: toAuthorJSON(a), Books: make([]bookJSON, 0, len(books))}
 	for _, b := range books {
-		detail.Books = append(detail.Books, toBookJSON(b))
+		detail.Books = append(detail.Books, m.bookJSONWithFiles(b))
 	}
 	writeJSON(w, detail)
 }
@@ -72,9 +73,34 @@ func (m *Module) handleListBooksHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	out := make([]bookJSON, 0, len(items))
 	for _, b := range items {
-		out = append(out, toBookJSON(b))
+		out = append(out, m.bookJSONWithFiles(b))
 	}
 	writeJSON(w, out)
+}
+
+func (m *Module) handleStreamBookFileHTTP(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" || m.store == nil {
+		http.NotFound(w, r)
+		return
+	}
+	files, err := m.store.ListBookFiles("")
+	if err != nil {
+		http.Error(w, fmtJSONError(err), http.StatusInternalServerError)
+		return
+	}
+	var path string
+	for _, f := range files {
+		if f.ID == id {
+			path = f.Path
+			break
+		}
+	}
+	if path == "" {
+		http.NotFound(w, r)
+		return
+	}
+	http.ServeFile(w, r, path)
 }
 
 type authorJSON struct {
@@ -85,13 +111,22 @@ type authorJSON struct {
 	Path        string `json:"path"`
 }
 
-type bookJSON struct {
+type bookFileJSON struct {
 	ID        string `json:"id"`
-	AuthorID  string `json:"author_id"`
+	BookID    string `json:"book_id"`
 	Title     string `json:"title"`
-	ISBN      string `json:"isbn"`
-	Year      int32  `json:"year"`
-	Monitored bool   `json:"monitored"`
+	Path      string `json:"path"`
+	StreamURL string `json:"stream_url,omitempty"`
+}
+
+type bookJSON struct {
+	ID        string         `json:"id"`
+	AuthorID  string         `json:"author_id"`
+	Title     string         `json:"title"`
+	ISBN      string         `json:"isbn"`
+	Year      int32          `json:"year"`
+	Monitored bool           `json:"monitored"`
+	Files     []bookFileJSON `json:"files,omitempty"`
 }
 
 type authorDetailJSON struct {
@@ -111,6 +146,25 @@ func toBookJSON(b *Book) bookJSON {
 		ID: b.ID, AuthorID: b.AuthorID, Title: b.Title,
 		ISBN: b.ISBN, Year: b.Year, Monitored: b.Monitored,
 	}
+}
+
+func (m *Module) bookJSONWithFiles(b *Book) bookJSON {
+	out := toBookJSON(b)
+	if m.store == nil {
+		return out
+	}
+	files, err := m.store.ListBookFiles(b.ID)
+	if err != nil {
+		return out
+	}
+	out.Files = make([]bookFileJSON, 0, len(files))
+	for _, f := range files {
+		out.Files = append(out.Files, bookFileJSON{
+			ID: f.ID, BookID: f.BookID, Title: f.Title, Path: f.Path,
+			StreamURL: "/stream/books/" + f.ID,
+		})
+	}
+	return out
 }
 
 func writeJSON(w http.ResponseWriter, v any) {
