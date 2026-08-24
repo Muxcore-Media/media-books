@@ -110,6 +110,30 @@ func TestModuleInitScan(t *testing.T) {
 	}
 }
 
+// TestScanConfiguredLibrary scans BOOKS_DATA_DIR / BOOKS_LIBRARY_DIR when RUN_LIBRARY_SCAN=1.
+// Used by vault soak scripts (go test -c, run binary on host without Go installed).
+func TestScanConfiguredLibrary(t *testing.T) {
+	if os.Getenv("RUN_LIBRARY_SCAN") != "1" {
+		t.Skip("set RUN_LIBRARY_SCAN=1")
+	}
+	m := internal.NewModule(internal.Config{
+		GRPCAddr: "127.0.0.1:0",
+		HTTPAddr: "127.0.0.1:0",
+	})
+	if err := m.Init(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = m.Stop(t.Context()) })
+	res, err := m.ScanLibrary()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.FilesFound == 0 {
+		t.Fatalf("no files found in library root: %+v", res)
+	}
+	t.Logf("scan: %+v", res)
+}
+
 func copyTree(src, dst string) error {
 	return filepath.WalkDir(src, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
