@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
 	"os"
@@ -29,7 +30,7 @@ type ScanResult struct {
 // ScanLibraryRoot walks root for ebook files and upserts authors/books/files.
 // Layout expected: Author/Book Title/file.ext (Author/file.ext → title from filename).
 // Metadata is derived only from path/filename — no network lookups.
-func (s *Store) ScanLibraryRoot(root string) (*ScanResult, error) {
+func (s *Store) ScanLibraryRoot(ctx context.Context, root string) (*ScanResult, error) {
 	root, err := filepath.Abs(filepath.Clean(root))
 	if err != nil {
 		return nil, fmt.Errorf("library root: %w", err)
@@ -55,20 +56,20 @@ func (s *Store) ScanLibraryRoot(root string) (*ScanResult, error) {
 			return nil
 		}
 		res.FilesFound++
-		abs, err := filepath.Abs(path)
-		if err != nil {
+		abs, absErr := filepath.Abs(path)
+		if absErr != nil {
 			res.FilesSkipped++
-			return nil
-		}
-		authorName, bookTitle, fileTitle := inferFromPath(root, abs)
-		imported, err := s.importEbookFile(authorName, bookTitle, fileTitle, abs)
-		if err != nil {
-			return err
-		}
-		if imported {
-			res.FilesImported++
 		} else {
-			res.FilesSkipped++
+			authorName, bookTitle, fileTitle := inferFromPath(root, abs)
+			imported, importErr := s.importEbookFile(ctx, authorName, bookTitle, fileTitle, abs)
+			if importErr != nil {
+				return importErr
+			}
+			if imported {
+				res.FilesImported++
+			} else {
+				res.FilesSkipped++
+			}
 		}
 		return nil
 	})
@@ -78,18 +79,18 @@ func (s *Store) ScanLibraryRoot(root string) (*ScanResult, error) {
 	return res, nil
 }
 
-func (s *Store) importEbookFile(authorName, bookTitle, fileTitle, absPath string) (imported bool, err error) {
-	existing, err := s.findBookFileByPath(absPath)
+func (s *Store) importEbookFile(ctx context.Context, authorName, bookTitle, fileTitle, absPath string) (imported bool, err error) {
+	existing, err := s.findBookFileByPath(ctx, absPath)
 	if err != nil {
 		return false, err
 	}
 
-	au, err := s.findAuthorByName(authorName)
+	au, err := s.findAuthorByName(ctx, authorName)
 	if err != nil {
 		return false, err
 	}
 	if au == nil {
-		au, err = s.AddAuthor(Author{
+		au, err = s.AddAuthor(ctx, Author{
 			Name:      authorName,
 			Monitored: true,
 			Path:      filepath.Dir(filepath.Dir(absPath)),
@@ -99,12 +100,12 @@ func (s *Store) importEbookFile(authorName, bookTitle, fileTitle, absPath string
 		}
 	}
 
-	bk, err := s.findBook(au.ID, bookTitle)
+	bk, err := s.findBook(ctx, au.ID, bookTitle)
 	if err != nil {
 		return false, err
 	}
 	if bk == nil {
-		bk, err = s.AddBook(Book{
+		bk, err = s.AddBook(ctx, Book{
 			AuthorID:  au.ID,
 			Title:     bookTitle,
 			Monitored: true,
@@ -114,7 +115,7 @@ func (s *Store) importEbookFile(authorName, bookTitle, fileTitle, absPath string
 		}
 	}
 
-	_, err = s.upsertBookFile(BookFile{
+	_, err = s.upsertBookFile(ctx, BookFile{
 		BookID:   bk.ID,
 		AuthorID: au.ID,
 		Title:    fileTitle,
