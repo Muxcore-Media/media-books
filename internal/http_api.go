@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -20,7 +21,7 @@ func (m *Module) handleListAuthorsHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"store not open"}`, http.StatusServiceUnavailable)
 		return
 	}
-	items, err := m.store.ListAuthors(r.URL.Query().Get("q"))
+	items, err := m.store.ListAuthors(r.Context(), r.URL.Query().Get("q"))
 	if err != nil {
 		http.Error(w, fmtJSONError(err), http.StatusInternalServerError)
 		return
@@ -42,7 +43,7 @@ func (m *Module) handleGetAuthorHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"store not open"}`, http.StatusServiceUnavailable)
 		return
 	}
-	a, err := m.store.GetAuthor(id)
+	a, err := m.store.GetAuthor(r.Context(), id)
 	if err != nil {
 		status := http.StatusInternalServerError
 		if strings.Contains(err.Error(), "not found") {
@@ -51,14 +52,14 @@ func (m *Module) handleGetAuthorHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmtJSONError(err), status)
 		return
 	}
-	books, err := m.store.ListBooks(id)
+	books, err := m.store.ListBooks(r.Context(), id)
 	if err != nil {
 		http.Error(w, fmtJSONError(err), http.StatusInternalServerError)
 		return
 	}
 	detail := authorDetailJSON{Author: toAuthorJSON(a), Books: make([]bookJSON, 0, len(books))}
 	for _, b := range books {
-		detail.Books = append(detail.Books, m.bookJSONWithFiles(b))
+		detail.Books = append(detail.Books, m.bookJSONWithFiles(r.Context(), b))
 	}
 	writeJSON(w, detail)
 }
@@ -68,14 +69,14 @@ func (m *Module) handleListBooksHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"store not open"}`, http.StatusServiceUnavailable)
 		return
 	}
-	items, err := m.store.ListBooks(r.URL.Query().Get("author_id"))
+	items, err := m.store.ListBooks(r.Context(), r.URL.Query().Get("author_id"))
 	if err != nil {
 		http.Error(w, fmtJSONError(err), http.StatusInternalServerError)
 		return
 	}
 	out := make([]bookJSON, 0, len(items))
 	for _, b := range items {
-		out = append(out, m.bookJSONWithFiles(b))
+		out = append(out, m.bookJSONWithFiles(r.Context(), b))
 	}
 	writeJSON(w, out)
 }
@@ -93,20 +94,13 @@ func (m *Module) handleListMissingHTTP(w http.ResponseWriter, r *http.Request) {
 	if pageSize <= 0 {
 		pageSize = 100
 	}
-	items, total, err := m.store.ListMissingBooks(page, pageSize)
+	items, total, err := m.store.ListMissingBooks(r.Context(), page, pageSize)
 	if err != nil {
 		http.Error(w, fmtJSONError(err), http.StatusInternalServerError)
 		return
 	}
-	out := make([]missingBookJSON, 0, len(items))
-	for _, it := range items {
-		out = append(out, missingBookJSON{
-			BookID: it.BookID, AuthorID: it.AuthorID, Title: it.Title,
-			AuthorName: it.AuthorName, Year: it.Year,
-		})
-	}
 	writeJSON(w, missingBooksResponse{
-		Items: out, Total: total, Page: page, PageSize: pageSize,
+		Items: items, Total: total, Page: page, PageSize: pageSize,
 	})
 }
 
@@ -116,7 +110,7 @@ func (m *Module) handleStreamBookFileHTTP(w http.ResponseWriter, r *http.Request
 		http.NotFound(w, r)
 		return
 	}
-	files, err := m.store.ListBookFiles("")
+	files, err := m.store.ListBookFiles(r.Context(), "")
 	if err != nil {
 		http.Error(w, fmtJSONError(err), http.StatusInternalServerError)
 		return
@@ -139,8 +133,8 @@ type authorJSON struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	GoodreadsID string `json:"goodreads_id"`
-	Monitored   bool   `json:"monitored"`
 	Path        string `json:"path"`
+	Monitored   bool   `json:"monitored"`
 }
 
 type bookFileJSON struct {
@@ -156,9 +150,9 @@ type bookJSON struct {
 	AuthorID  string         `json:"author_id"`
 	Title     string         `json:"title"`
 	ISBN      string         `json:"isbn"`
+	Files     []bookFileJSON `json:"files,omitempty"`
 	Year      int32          `json:"year"`
 	Monitored bool           `json:"monitored"`
-	Files     []bookFileJSON `json:"files,omitempty"`
 }
 
 type authorDetailJSON struct {
@@ -166,19 +160,11 @@ type authorDetailJSON struct {
 	Books  []bookJSON `json:"books"`
 }
 
-type missingBookJSON struct {
-	BookID     string `json:"book_id"`
-	AuthorID   string `json:"author_id"`
-	Title      string `json:"title"`
-	AuthorName string `json:"author_name"`
-	Year       int32  `json:"year"`
-}
-
 type missingBooksResponse struct {
-	Items    []missingBookJSON `json:"items"`
-	Total    int               `json:"total"`
-	Page     int               `json:"page"`
-	PageSize int               `json:"page_size"`
+	Items    []MissingBook `json:"items"`
+	Total    int           `json:"total"`
+	Page     int           `json:"page"`
+	PageSize int           `json:"page_size"`
 }
 
 func toAuthorJSON(a *Author) authorJSON {
@@ -195,12 +181,12 @@ func toBookJSON(b *Book) bookJSON {
 	}
 }
 
-func (m *Module) bookJSONWithFiles(b *Book) bookJSON {
+func (m *Module) bookJSONWithFiles(ctx context.Context, b *Book) bookJSON {
 	out := toBookJSON(b)
 	if m.store == nil {
 		return out
 	}
-	files, err := m.store.ListBookFiles(b.ID)
+	files, err := m.store.ListBookFiles(ctx, b.ID)
 	if err != nil {
 		return out
 	}
