@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -10,6 +11,7 @@ func (m *Module) registerBooksHTTPAPI(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/authors", m.handleListAuthorsHTTP)
 	mux.HandleFunc("GET /api/authors/{id}", m.handleGetAuthorHTTP)
 	mux.HandleFunc("GET /api/books", m.handleListBooksHTTP)
+	mux.HandleFunc("GET /api/missing", m.handleListMissingHTTP)
 	mux.HandleFunc("GET /api/files/{id}/stream", m.handleStreamBookFileHTTP)
 }
 
@@ -78,6 +80,36 @@ func (m *Module) handleListBooksHTTP(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, out)
 }
 
+func (m *Module) handleListMissingHTTP(w http.ResponseWriter, r *http.Request) {
+	if m.store == nil {
+		http.Error(w, `{"error":"store not open"}`, http.StatusServiceUnavailable)
+		return
+	}
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	pageSize, _ := strconv.Atoi(r.URL.Query().Get("page_size"))
+	if page < 1 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 100
+	}
+	items, total, err := m.store.ListMissingBooks(page, pageSize)
+	if err != nil {
+		http.Error(w, fmtJSONError(err), http.StatusInternalServerError)
+		return
+	}
+	out := make([]missingBookJSON, 0, len(items))
+	for _, it := range items {
+		out = append(out, missingBookJSON{
+			BookID: it.BookID, AuthorID: it.AuthorID, Title: it.Title,
+			AuthorName: it.AuthorName, Year: it.Year,
+		})
+	}
+	writeJSON(w, missingBooksResponse{
+		Items: out, Total: total, Page: page, PageSize: pageSize,
+	})
+}
+
 func (m *Module) handleStreamBookFileHTTP(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" || m.store == nil {
@@ -132,6 +164,21 @@ type bookJSON struct {
 type authorDetailJSON struct {
 	Author authorJSON `json:"author"`
 	Books  []bookJSON `json:"books"`
+}
+
+type missingBookJSON struct {
+	BookID     string `json:"book_id"`
+	AuthorID   string `json:"author_id"`
+	Title      string `json:"title"`
+	AuthorName string `json:"author_name"`
+	Year       int32  `json:"year"`
+}
+
+type missingBooksResponse struct {
+	Items    []missingBookJSON `json:"items"`
+	Total    int               `json:"total"`
+	Page     int               `json:"page"`
+	PageSize int               `json:"page_size"`
 }
 
 func toAuthorJSON(a *Author) authorJSON {

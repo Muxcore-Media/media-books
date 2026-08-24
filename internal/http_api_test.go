@@ -63,4 +63,25 @@ func TestHTTPListAuthorsFixtures(t *testing.T) {
 	if booksResp.StatusCode != http.StatusOK {
 		t.Fatalf("books status %d", booksResp.StatusCode)
 	}
+
+	missingResp, err := http.Get("http://" + m.HTTPListenAddr() + "/api/missing")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer missingResp.Body.Close()
+	if missingResp.StatusCode != http.StatusOK {
+		t.Fatalf("missing status %d", missingResp.StatusCode)
+	}
+	var missing struct {
+		Items    []map[string]any `json:"items"`
+		Total    int              `json:"total"`
+		Page     int              `json:"page"`
+		PageSize int              `json:"page_size"`
+	}
+	if err := json.NewDecoder(missingResp.Body).Decode(&missing); err != nil {
+		t.Fatal(err)
+	}
+	if missing.Page != 1 || missing.PageSize != 100 {
+		t.Fatalf("unexpected pagination: %+v", missing)
+	}
 }

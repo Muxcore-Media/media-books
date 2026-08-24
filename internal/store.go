@@ -272,6 +272,58 @@ func (s *Store) ListBookFiles(bookID string) ([]*BookFile, error) {
 	return out, rows.Err()
 }
 
+// MissingBook is a monitored book with no files on disk.
+type MissingBook struct {
+	BookID     string
+	AuthorID   string
+	Title      string
+	AuthorName string
+	Year       int32
+}
+
+// ListMissingBooks returns monitored books that have no book_files rows.
+func (s *Store) ListMissingBooks(page, pageSize int) ([]MissingBook, int, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize <= 0 || pageSize > 200 {
+		pageSize = 100
+	}
+	offset := (page - 1) * pageSize
+	var total int
+	if err := s.db.QueryRow(`
+		SELECT COUNT(*)
+		FROM books b
+		JOIN authors a ON a.id = b.author_id
+		WHERE b.monitored = 1 AND a.monitored = 1
+		  AND NOT EXISTS (SELECT 1 FROM book_files f WHERE f.book_id = b.id)
+	`).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count missing books: %w", err)
+	}
+	rows, err := s.db.Query(`
+		SELECT b.id, b.author_id, b.title, b.year, a.name
+		FROM books b
+		JOIN authors a ON a.id = b.author_id
+		WHERE b.monitored = 1 AND a.monitored = 1
+		  AND NOT EXISTS (SELECT 1 FROM book_files f WHERE f.book_id = b.id)
+		ORDER BY a.name, b.title
+		LIMIT ? OFFSET ?
+	`, pageSize, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list missing books: %w", err)
+	}
+	defer rows.Close()
+	out := make([]MissingBook, 0)
+	for rows.Next() {
+		var item MissingBook
+		if err := rows.Scan(&item.BookID, &item.AuthorID, &item.Title, &item.Year, &item.AuthorName); err != nil {
+			return nil, 0, err
+		}
+		out = append(out, item)
+	}
+	return out, total, rows.Err()
+}
+
 func (s *Store) findAuthorByName(name string) (*Author, error) {
 	row := s.db.QueryRow(`
 		SELECT id, name, goodreads_id, monitored, path FROM authors

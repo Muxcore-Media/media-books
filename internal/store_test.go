@@ -51,6 +51,31 @@ func TestStoreAuthorBookRoundTrip(t *testing.T) {
 	}
 }
 
+func TestStoreListMissingBooks(t *testing.T) {
+	s, _ := openTempStore(t)
+	au, err := s.AddAuthor(internal.Author{Name: "Terry Pratchett", Monitored: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	missing, err := s.AddBook(internal.Book{AuthorID: au.ID, Title: "Guards! Guards!", Year: 1989, Monitored: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.AddBook(internal.Book{AuthorID: au.ID, Title: "Unmonitored", Monitored: false}); err != nil {
+		t.Fatal(err)
+	}
+	items, total, err := s.ListMissingBooks(1, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if total != 1 || len(items) != 1 {
+		t.Fatalf("total=%d items=%d", total, len(items))
+	}
+	if items[0].BookID != missing.ID || items[0].AuthorName != "Terry Pratchett" {
+		t.Fatalf("%+v", items[0])
+	}
+}
+
 func TestStorePersistsAcrossOpen(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "books.db")
