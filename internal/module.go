@@ -12,7 +12,10 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
+	mediaadminv1 "github.com/Muxcore-Media/contracts-media-admin/gen/muxcore/media/admin/v1"
 	"github.com/Muxcore-Media/core/pkg/contracts"
 	modulesdk "github.com/Muxcore-Media/core/sdk/go/module"
 	booksv1 "github.com/Muxcore-Media/media-books/proto/gen/muxcore/books/v1"
@@ -62,7 +65,7 @@ func NewModule(cfg Config) *Module {
 		cfg.DataDir = "./data"
 	}
 	if cfg.LibraryDir == "" {
-		cfg.LibraryDir = filepath.Join(cfg.DataDir, "books")
+		cfg.LibraryDir = cfg.DataDir
 	}
 	return &Module{
 		id: cfg.ID, grpcAddr: cfg.GRPCAddr, httpAddr: cfg.HTTPAddr,
@@ -72,11 +75,14 @@ func NewModule(cfg Config) *Module {
 
 func (m *Module) Info() contracts.ModuleInfo {
 	return contracts.ModuleInfo{
-		ID: m.id, Name: "Book Manager", Version: "0.2.0",
+		ID: m.id, Name: "Book Manager", Version: "0.3.0",
 		Roles:        []string{"media", "books"},
 		Description:  "Readarr-class book library manager with SQLite persistence",
 		Capabilities: []string{"media.books", "books", "settings"},
-		HTTPAddr:     m.grpcAddr,
+		Contracts: []contracts.ContractDeclaration{
+			{Repo: "github.com/Muxcore-Media/contracts-media-admin", Interface: "MediaAdminService", Version: "v0.1.0"},
+		},
+		HTTPAddr: m.httpAddr,
 	}
 }
 
@@ -101,6 +107,9 @@ func (m *Module) Start(ctx context.Context) error {
 	if m.store == nil {
 		return fmt.Errorf("store not initialized")
 	}
+	if _, err := m.ScanLibrary(ctx); err != nil {
+		return fmt.Errorf("startup library scan: %w", err)
+	}
 	var lc net.ListenConfig
 	lis, err := lc.Listen(ctx, "tcp", m.grpcAddr)
 	if err != nil {
@@ -110,6 +119,7 @@ func (m *Module) Start(ctx context.Context) error {
 	m.grpcAddr = lis.Addr().String()
 	m.grpcSrv = grpc.NewServer()
 	booksv1.RegisterBookManagementServiceServer(m.grpcSrv, &bookServer{m: m})
+	mediaadminv1.RegisterMediaAdminServiceServer(m.grpcSrv, mediaAdminServer{m: m})
 	modulesdk.RegisterSettings(m.grpcSrv, m.id, m)
 	go func() {
 		slog.Info("books gRPC listening", "addr", m.grpcAddr)
@@ -147,6 +157,12 @@ func (m *Module) GRPCListenAddr() string { return m.grpcAddr }
 // HTTPListenAddr returns the bound health/HTTP API address after Start.
 func (m *Module) HTTPListenAddr() string { return m.httpAddr }
 
+func (m *Module) libraryRoot() string {
+	m.cfgMu.RLock()
+	defer m.cfgMu.RUnlock()
+	return m.libraryDir
+}
+
 func (m *Module) Stop(ctx context.Context) error {
 	if m.grpcSrv != nil {
 		m.grpcSrv.GracefulStop()
@@ -165,7 +181,7 @@ func (m *Module) Health(ctx context.Context) error {
 	if m.store == nil {
 		return fmt.Errorf("store not open")
 	}
-	return nil
+	return m.store.Ping(ctx)
 }
 
 // ScanLibrary scans the configured library root into SQLite.
@@ -216,8 +232,29 @@ func (s *bookServer) ListAuthors(ctx context.Context, req *booksv1.ListAuthorsRe
 	return &booksv1.ListAuthorsResponse{Authors: out}, nil
 }
 
+func (s *bookServer) UpdateAuthor(ctx context.Context, req *booksv1.UpdateAuthorRequest) (*booksv1.UpdateAuthorResponse, error) {
+	fields := map[string]any{}
+	if req.Name != nil {
+		fields["name"] = req.GetName()
+	}
+	if req.GoodreadsId != nil {
+		fields["goodreads_id"] = req.GetGoodreadsId()
+	}
+	if req.Monitored != nil {
+		fields["monitored"] = req.GetMonitored()
+	}
+	if req.Path != nil {
+		fields["path"] = req.GetPath()
+	}
+	a, err := s.m.store.UpdateAuthor(ctx, req.GetId(), fields)
+	if err != nil {
+		return nil, err
+	}
+	return &booksv1.UpdateAuthorResponse{Author: toPBAuthor(a)}, nil
+}
+
 func (s *bookServer) RemoveAuthor(ctx context.Context, req *booksv1.RemoveAuthorRequest) (*booksv1.RemoveAuthorResponse, error) {
-	if err := s.m.store.RemoveAuthor(ctx, req.GetId()); err != nil {
+	if err := s.m.store.RemoveAuthorFiles(ctx, req.GetId(), s.m.libraryRoot(), req.GetDeleteFiles()); err != nil {
 		return nil, err
 	}
 	return &booksv1.RemoveAuthorResponse{Success: true}, nil
@@ -234,6 +271,14 @@ func (s *bookServer) AddBook(ctx context.Context, req *booksv1.AddBookRequest) (
 	return &booksv1.AddBookResponse{Book: toPBBook(b)}, nil
 }
 
+func (s *bookServer) GetBook(ctx context.Context, req *booksv1.GetBookRequest) (*booksv1.GetBookResponse, error) {
+	b, err := s.m.store.GetBook(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	return &booksv1.GetBookResponse{Book: s.m.bookWithFiles(ctx, b)}, nil
+}
+
 func (s *bookServer) ListBooks(ctx context.Context, req *booksv1.ListBooksRequest) (*booksv1.ListBooksResponse, error) {
 	items, err := s.m.store.ListBooks(ctx, req.GetAuthorId())
 	if err != nil {
@@ -241,9 +286,108 @@ func (s *bookServer) ListBooks(ctx context.Context, req *booksv1.ListBooksReques
 	}
 	out := make([]*booksv1.Book, 0, len(items))
 	for _, b := range items {
-		out = append(out, toPBBook(b))
+		out = append(out, s.m.bookWithFiles(ctx, b))
 	}
 	return &booksv1.ListBooksResponse{Books: out}, nil
+}
+
+func (s *bookServer) UpdateBook(ctx context.Context, req *booksv1.UpdateBookRequest) (*booksv1.UpdateBookResponse, error) {
+	fields := map[string]any{}
+	if req.Title != nil {
+		fields["title"] = req.GetTitle()
+	}
+	if req.Isbn != nil {
+		fields["isbn"] = req.GetIsbn()
+	}
+	if req.Year != nil {
+		fields["year"] = req.GetYear()
+	}
+	if req.Monitored != nil {
+		fields["monitored"] = req.GetMonitored()
+	}
+	b, err := s.m.store.UpdateBook(ctx, req.GetId(), fields)
+	if err != nil {
+		return nil, err
+	}
+	return &booksv1.UpdateBookResponse{Book: s.m.bookWithFiles(ctx, b)}, nil
+}
+
+func (s *bookServer) RemoveBook(ctx context.Context, req *booksv1.RemoveBookRequest) (*booksv1.RemoveBookResponse, error) {
+	if err := s.m.store.RemoveBookFiles(ctx, req.GetId(), s.m.libraryRoot(), req.GetDeleteFiles()); err != nil {
+		return nil, err
+	}
+	return &booksv1.RemoveBookResponse{Success: true}, nil
+}
+
+func (s *bookServer) ScanLibrary(ctx context.Context, _ *booksv1.ScanLibraryRequest) (*booksv1.ScanLibraryResponse, error) {
+	res, err := s.m.ScanLibrary(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &booksv1.ScanLibraryResponse{
+		FilesFound: int32(res.FilesFound), FilesImported: int32(res.FilesImported),
+		FilesSkipped: int32(res.FilesSkipped), FilesRemoved: int32(res.FilesRemoved),
+	}, nil
+}
+
+func (s *bookServer) ListBookFiles(ctx context.Context, req *booksv1.ListBookFilesRequest) (*booksv1.ListBookFilesResponse, error) {
+	files, err := s.m.store.ListBookFiles(ctx, req.GetBookId())
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*booksv1.BookFile, 0, len(files))
+	for _, f := range files {
+		out = append(out, toPBBookFile(f))
+	}
+	return &booksv1.ListBookFilesResponse{Files: out}, nil
+}
+
+func (s *bookServer) ListMissing(ctx context.Context, req *booksv1.ListMissingRequest) (*booksv1.ListMissingResponse, error) {
+	page := int(req.GetPage())
+	if page < 1 {
+		page = 1
+	}
+	pageSize := int(req.GetPageSize())
+	if pageSize <= 0 {
+		pageSize = 100
+	}
+	items, total, err := s.m.store.ListMissingBooksFiltered(ctx, page, pageSize, req.GetAuthorId())
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*booksv1.MissingBookItem, 0, len(items))
+	for _, it := range items {
+		out = append(out, &booksv1.MissingBookItem{
+			BookId: it.BookID, AuthorId: it.AuthorID, Title: it.Title,
+			AuthorName: it.AuthorName, Year: it.Year,
+		})
+	}
+	return &booksv1.ListMissingResponse{
+		Items: out, Total: int32(total), Page: int32(page), PageSize: int32(pageSize),
+	}, nil
+}
+
+func (s *bookServer) ImportBookFile(ctx context.Context, req *booksv1.ImportBookFileRequest) (*booksv1.ImportBookFileResponse, error) {
+	f, err := s.m.store.ImportBookFile(ctx, req.GetBookId(), req.GetPath(), s.m.libraryRoot())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	return &booksv1.ImportBookFileResponse{File: toPBBookFile(f)}, nil
+}
+
+func (m *Module) bookWithFiles(ctx context.Context, b *Book) *booksv1.Book {
+	pb := toPBBook(b)
+	if m.store == nil {
+		return pb
+	}
+	files, err := m.store.ListBookFiles(ctx, b.ID)
+	if err != nil {
+		return pb
+	}
+	for _, f := range files {
+		pb.Files = append(pb.Files, toPBBookFile(f))
+	}
+	return pb
 }
 
 func toPBAuthor(a *Author) *booksv1.Author {
@@ -258,4 +402,8 @@ func toPBBook(b *Book) *booksv1.Book {
 		Id: b.ID, AuthorId: b.AuthorID, Title: b.Title,
 		Isbn: b.ISBN, Year: b.Year, Monitored: b.Monitored,
 	}
+}
+
+func toPBBookFile(f *BookFile) *booksv1.BookFile {
+	return &booksv1.BookFile{Id: f.ID, Title: f.Title, Path: f.Path}
 }

@@ -1,8 +1,16 @@
 {
   "id": "media-books",
   "name": "Book Manager",
-  "version": "0.2.0",
-  "description": "Readarr-class book library manager with SQLite persistence",
+  "version": "0.3.0",
+  "description": "Readarr-class book library manager with SQLite persistence and admin UI integration",
   "roles": ["media", "books"],
-  "capabilities": ["media.books", "books", "settings"]
+  "capabilities": ["media.books", "books", "settings"],
+  "contracts": [
+    {
+      "repo": "github.com/Muxcore-Media/contracts-media-admin",
+      "interface": "MediaAdminService",
+      "version": "v0.1.0"
+    }
+  ],
+  "minCoreVersion": "0.5.2"
 }

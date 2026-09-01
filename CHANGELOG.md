@@ -1,5 +1,23 @@
 # Changelog
 
+## [v0.3.0] — 2026-08-31
+
+### Added
+- `ScanLibrary` gRPC + `POST /api/scan`; startup scan in `Module.Start`
+- `UpdateAuthor` / `UpdateBook` gRPC + store support (monitored toggle fixes `/api/missing`)
+- `GetBook` / `RemoveBook` RPC; `delete_files` honors `library_dir` root
+- `ListBookFiles` / `ListMissing` gRPC; `files` on proto `Book`
+- `ImportBookFile` gRPC + `POST /api/books/{id}/import` (fixture paths under `library_dir`)
+- Hardened `GET /api/files/{id}/stream` via `GetBookFile` + path guard
+- `MediaAdminService` (`contracts-media-admin`) with missing feature
+- gRPC integration tests; expanded HTTP/store/scan tests
+- `PRAGMA foreign_keys=ON`; `Health()` pings SQLite
+
+### Changed
+- Default `BOOKS_LIBRARY_DIR` to `BOOKS_DATA_DIR` (no nested `$DATA/books/books`)
+- `Info().HTTPAddr` reports HTTP listen address (not gRPC)
+- Settings `library_dir` mkdir+validate on update
+
 ## [v0.2.0] — 2026-08-10
 
 ### Added

@@ -58,6 +58,10 @@ func OpenStore(ctx context.Context, path string) (*Store, error) {
 		_ = db.Close()
 		return nil, fmt.Errorf("enable WAL: %w", err)
 	}
+	if _, err := db.ExecContext(ctx, `PRAGMA foreign_keys=ON`); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("enable foreign keys: %w", err)
+	}
 	s := &Store{db: db}
 	if err := s.migrate(ctx); err != nil {
 		_ = db.Close()
@@ -102,6 +106,15 @@ func (s *Store) migrate(ctx context.Context) error {
 		return fmt.Errorf("migrate: %w", err)
 	}
 	return nil
+}
+
+// Ping verifies the database connection is alive.
+func (s *Store) Ping(ctx context.Context) error {
+	if s == nil || s.db == nil {
+		return fmt.Errorf("store not open")
+	}
+	var one int
+	return s.db.QueryRowContext(ctx, `SELECT 1`).Scan(&one)
 }
 
 // Close closes the database.
@@ -165,6 +178,25 @@ func (s *Store) ListAuthors(ctx context.Context, query string) ([]*Author, error
 }
 
 func (s *Store) RemoveAuthor(ctx context.Context, id string) error {
+	return s.RemoveAuthorFiles(ctx, id, "", false)
+}
+
+// RemoveAuthorFiles deletes an author and optionally unlinks ebook files under libraryRoot.
+func (s *Store) RemoveAuthorFiles(ctx context.Context, id, libraryRoot string, deleteFiles bool) error {
+	if deleteFiles && libraryRoot != "" {
+		files, err := s.ListBookFiles(ctx, "")
+		if err != nil {
+			return err
+		}
+		for _, f := range files {
+			if f.AuthorID != id {
+				continue
+			}
+			if err := unlinkIfUnderRoot(f.Path, libraryRoot); err != nil {
+				return err
+			}
+		}
+	}
 	res, err := s.db.ExecContext(ctx, `DELETE FROM authors WHERE id = ?`, id)
 	if err != nil {
 		return fmt.Errorf("delete author: %w", err)
@@ -176,9 +208,6 @@ func (s *Store) RemoveAuthor(ctx context.Context, id string) error {
 	if n == 0 {
 		return fmt.Errorf("author %q not found", id)
 	}
-	// Cascades may be off without PRAGMA foreign_keys; clean children explicitly.
-	_, _ = s.db.ExecContext(ctx, `DELETE FROM book_files WHERE author_id = ?`, id)
-	_, _ = s.db.ExecContext(ctx, `DELETE FROM books WHERE author_id = ?`, id)
 	return nil
 }
 
@@ -210,6 +239,165 @@ func (s *Store) AddBook(ctx context.Context, b Book) (*Book, error) {
 	}
 	out := b
 	return &out, nil
+}
+
+func (s *Store) GetBook(ctx context.Context, id string) (*Book, error) {
+	row := s.db.QueryRowContext(ctx, `
+		SELECT id, author_id, title, isbn, year, monitored FROM books WHERE id = ?
+	`, id)
+	return scanBook(row)
+}
+
+func (s *Store) UpdateAuthor(ctx context.Context, id string, fields map[string]any) (*Author, error) {
+	a, err := s.GetAuthor(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if v, ok := fields["name"].(string); ok && strings.TrimSpace(v) != "" {
+		a.Name = v
+	}
+	if v, ok := fields["goodreads_id"].(string); ok {
+		a.GoodreadsID = v
+	}
+	if v, ok := fields["path"].(string); ok {
+		a.Path = v
+	}
+	if v, ok := fields["monitored"].(bool); ok {
+		a.Monitored = v
+	}
+	monitored := 0
+	if a.Monitored {
+		monitored = 1
+	}
+	_, err = s.db.ExecContext(ctx, `
+		UPDATE authors SET name = ?, goodreads_id = ?, monitored = ?, path = ? WHERE id = ?
+	`, a.Name, a.GoodreadsID, monitored, a.Path, id)
+	if err != nil {
+		return nil, fmt.Errorf("update author: %w", err)
+	}
+	return s.GetAuthor(ctx, id)
+}
+
+func (s *Store) UpdateBook(ctx context.Context, id string, fields map[string]any) (*Book, error) {
+	b, err := s.GetBook(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if v, ok := fields["title"].(string); ok && strings.TrimSpace(v) != "" {
+		b.Title = v
+	}
+	if v, ok := fields["isbn"].(string); ok {
+		b.ISBN = v
+	}
+	if v, ok := fields["year"].(int32); ok {
+		b.Year = v
+	}
+	if v, ok := fields["monitored"].(bool); ok {
+		b.Monitored = v
+	}
+	monitored := 0
+	if b.Monitored {
+		monitored = 1
+	}
+	_, err = s.db.ExecContext(ctx, `
+		UPDATE books SET title = ?, isbn = ?, year = ?, monitored = ? WHERE id = ?
+	`, b.Title, b.ISBN, b.Year, monitored, id)
+	if err != nil {
+		return nil, fmt.Errorf("update book: %w", err)
+	}
+	return s.GetBook(ctx, id)
+}
+
+func (s *Store) RemoveBook(ctx context.Context, id string) error {
+	return s.RemoveBookFiles(ctx, id, "", false)
+}
+
+// RemoveBookFiles deletes a book and optionally unlinks ebook files under libraryRoot.
+func (s *Store) RemoveBookFiles(ctx context.Context, id, libraryRoot string, deleteFiles bool) error {
+	if deleteFiles && libraryRoot != "" {
+		files, err := s.ListBookFiles(ctx, id)
+		if err != nil {
+			return err
+		}
+		for _, f := range files {
+			if err := unlinkIfUnderRoot(f.Path, libraryRoot); err != nil {
+				return err
+			}
+		}
+	}
+	res, err := s.db.ExecContext(ctx, `DELETE FROM books WHERE id = ?`, id)
+	if err != nil {
+		return fmt.Errorf("delete book: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("book %q not found", id)
+	}
+	return nil
+}
+
+func (s *Store) GetBookFile(ctx context.Context, id string) (*BookFile, error) {
+	row := s.db.QueryRowContext(ctx, `
+		SELECT id, book_id, author_id, title, path FROM book_files WHERE id = ?
+	`, id)
+	return scanBookFile(row)
+}
+
+// ImportBookFile attaches an on-disk file under libraryRoot to a book.
+func (s *Store) ImportBookFile(ctx context.Context, bookID, filePath, libraryRoot string) (*BookFile, error) {
+	abs, err := validateLibraryPath(filePath, libraryRoot)
+	if err != nil {
+		return nil, err
+	}
+	info, err := os.Stat(abs)
+	if err != nil {
+		return nil, fmt.Errorf("file not found: %w", err)
+	}
+	if info.IsDir() {
+		return nil, fmt.Errorf("path is a directory")
+	}
+	bk, err := s.GetBook(ctx, bookID)
+	if err != nil {
+		return nil, err
+	}
+	au, err := s.GetAuthor(ctx, bk.AuthorID)
+	if err != nil {
+		return nil, err
+	}
+	title := strings.TrimSpace(strings.TrimSuffix(filepath.Base(abs), filepath.Ext(abs)))
+	return s.upsertBookFile(ctx, BookFile{
+		BookID:   bk.ID,
+		AuthorID: au.ID,
+		Title:    title,
+		Path:     abs,
+	})
+}
+
+func unlinkIfUnderRoot(path, root string) error {
+	abs, err := pathUnderRoot(path, root)
+	if err != nil {
+		return nil
+	}
+	if err := os.Remove(abs); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("unlink %q: %w", abs, err)
+	}
+	return nil
+}
+
+func (s *Store) bookHasOnDiskFile(ctx context.Context, bookID string) (bool, error) {
+	files, err := s.ListBookFiles(ctx, bookID)
+	if err != nil {
+		return false, err
+	}
+	for _, f := range files {
+		if _, err := os.Stat(f.Path); err == nil {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (s *Store) ListBooks(ctx context.Context, authorID string) ([]*Book, error) {
@@ -283,47 +471,88 @@ type MissingBook struct {
 	Year       int32  `json:"year"`
 }
 
-// ListMissingBooks returns monitored books that have no book_files rows.
+// ListMissingBooks returns monitored books with no on-disk ebook files.
 func (s *Store) ListMissingBooks(ctx context.Context, page, pageSize int) ([]MissingBook, int, error) {
+	return s.ListMissingBooksFiltered(ctx, page, pageSize, "")
+}
+
+// ListMissingBooksFiltered returns monitored missing books, optionally scoped to one author.
+func (s *Store) ListMissingBooksFiltered(ctx context.Context, page, pageSize int, authorID string) ([]MissingBook, int, error) {
 	if page < 1 {
 		page = 1
 	}
 	if pageSize <= 0 || pageSize > 200 {
 		pageSize = 100
 	}
-	offset := (page - 1) * pageSize
-	var total int
-	if err := s.db.QueryRowContext(ctx, `
-		SELECT COUNT(*)
-		FROM books b
-		JOIN authors a ON a.id = b.author_id
-		WHERE b.monitored = 1 AND a.monitored = 1
-		  AND NOT EXISTS (SELECT 1 FROM book_files f WHERE f.book_id = b.id)
-	`).Scan(&total); err != nil {
-		return nil, 0, fmt.Errorf("count missing books: %w", err)
-	}
-	rows, err := s.db.QueryContext(ctx, `
+	q := `
 		SELECT b.id, b.author_id, b.title, b.year, a.name
 		FROM books b
 		JOIN authors a ON a.id = b.author_id
-		WHERE b.monitored = 1 AND a.monitored = 1
-		  AND NOT EXISTS (SELECT 1 FROM book_files f WHERE f.book_id = b.id)
-		ORDER BY a.name, b.title
-		LIMIT ? OFFSET ?
-	`, pageSize, offset)
-	if err != nil {
-		return nil, 0, fmt.Errorf("list missing books: %w", err)
+		WHERE b.monitored = 1 AND a.monitored = 1`
+	args := []any{}
+	if authorID != "" {
+		q += ` AND b.author_id = ?`
+		args = append(args, authorID)
 	}
-	defer func() { _ = rows.Close() }()
-	out := make([]MissingBook, 0)
+	q += ` ORDER BY a.name, b.title`
+	rows, err := s.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list candidate missing books: %w", err)
+	}
+	candidates := make([]MissingBook, 0)
 	for rows.Next() {
 		var item MissingBook
 		if err := rows.Scan(&item.BookID, &item.AuthorID, &item.Title, &item.Year, &item.AuthorName); err != nil {
+			_ = rows.Close()
 			return nil, 0, err
 		}
-		out = append(out, item)
+		candidates = append(candidates, item)
 	}
-	return out, total, rows.Err()
+	if err := rows.Close(); err != nil {
+		return nil, 0, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+	all := make([]MissingBook, 0, len(candidates))
+	for _, item := range candidates {
+		hasFile, err := s.bookHasOnDiskFile(ctx, item.BookID)
+		if err != nil {
+			return nil, 0, err
+		}
+		if !hasFile {
+			all = append(all, item)
+		}
+	}
+	total := len(all)
+	offset := (page - 1) * pageSize
+	if offset >= total {
+		return []MissingBook{}, total, nil
+	}
+	end := offset + pageSize
+	if end > total {
+		end = total
+	}
+	return all[offset:end], total, nil
+}
+
+// PurgeMissingBookFiles deletes book_files rows whose paths no longer exist on disk.
+func (s *Store) PurgeMissingBookFiles(ctx context.Context) (int, error) {
+	files, err := s.ListBookFiles(ctx, "")
+	if err != nil {
+		return 0, err
+	}
+	removed := 0
+	for _, f := range files {
+		if _, err := os.Stat(f.Path); err == nil {
+			continue
+		}
+		if _, err := s.db.ExecContext(ctx, `DELETE FROM book_files WHERE id = ?`, f.ID); err != nil {
+			return removed, fmt.Errorf("purge book file: %w", err)
+		}
+		removed++
+	}
+	return removed, nil
 }
 
 func (s *Store) findAuthorByName(ctx context.Context, name string) (*Author, error) {

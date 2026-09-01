@@ -97,6 +97,66 @@ func (x *Author) GetPath() string {
 	return ""
 }
 
+type BookFile struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Path          string                 `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BookFile) Reset() {
+	*x = BookFile{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BookFile) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BookFile) ProtoMessage() {}
+
+func (x *BookFile) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BookFile.ProtoReflect.Descriptor instead.
+func (*BookFile) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *BookFile) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *BookFile) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *BookFile) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
 type Book struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -105,13 +165,14 @@ type Book struct {
 	Isbn          string                 `protobuf:"bytes,4,opt,name=isbn,proto3" json:"isbn,omitempty"`
 	Year          int32                  `protobuf:"varint,5,opt,name=year,proto3" json:"year,omitempty"`
 	Monitored     bool                   `protobuf:"varint,6,opt,name=monitored,proto3" json:"monitored,omitempty"`
+	Files         []*BookFile            `protobuf:"bytes,7,rep,name=files,proto3" json:"files,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Book) Reset() {
 	*x = Book{}
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[1]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -123,7 +184,7 @@ func (x *Book) String() string {
 func (*Book) ProtoMessage() {}
 
 func (x *Book) ProtoReflect() protoreflect.Message {
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[1]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -136,7 +197,7 @@ func (x *Book) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Book.ProtoReflect.Descriptor instead.
 func (*Book) Descriptor() ([]byte, []int) {
-	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{1}
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Book) GetId() string {
@@ -181,6 +242,13 @@ func (x *Book) GetMonitored() bool {
 	return false
 }
 
+func (x *Book) GetFiles() []*BookFile {
+	if x != nil {
+		return x.Files
+	}
+	return nil
+}
+
 type AddAuthorRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -193,7 +261,7 @@ type AddAuthorRequest struct {
 
 func (x *AddAuthorRequest) Reset() {
 	*x = AddAuthorRequest{}
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[2]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -205,7 +273,7 @@ func (x *AddAuthorRequest) String() string {
 func (*AddAuthorRequest) ProtoMessage() {}
 
 func (x *AddAuthorRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[2]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -218,7 +286,7 @@ func (x *AddAuthorRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddAuthorRequest.ProtoReflect.Descriptor instead.
 func (*AddAuthorRequest) Descriptor() ([]byte, []int) {
-	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{2}
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *AddAuthorRequest) GetName() string {
@@ -258,7 +326,7 @@ type AddAuthorResponse struct {
 
 func (x *AddAuthorResponse) Reset() {
 	*x = AddAuthorResponse{}
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[3]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -270,7 +338,7 @@ func (x *AddAuthorResponse) String() string {
 func (*AddAuthorResponse) ProtoMessage() {}
 
 func (x *AddAuthorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[3]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -283,7 +351,7 @@ func (x *AddAuthorResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddAuthorResponse.ProtoReflect.Descriptor instead.
 func (*AddAuthorResponse) Descriptor() ([]byte, []int) {
-	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{3}
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *AddAuthorResponse) GetAuthor() *Author {
@@ -302,7 +370,7 @@ type GetAuthorRequest struct {
 
 func (x *GetAuthorRequest) Reset() {
 	*x = GetAuthorRequest{}
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[4]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -314,7 +382,7 @@ func (x *GetAuthorRequest) String() string {
 func (*GetAuthorRequest) ProtoMessage() {}
 
 func (x *GetAuthorRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[4]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -327,7 +395,7 @@ func (x *GetAuthorRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAuthorRequest.ProtoReflect.Descriptor instead.
 func (*GetAuthorRequest) Descriptor() ([]byte, []int) {
-	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{4}
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetAuthorRequest) GetId() string {
@@ -346,7 +414,7 @@ type GetAuthorResponse struct {
 
 func (x *GetAuthorResponse) Reset() {
 	*x = GetAuthorResponse{}
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[5]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -358,7 +426,7 @@ func (x *GetAuthorResponse) String() string {
 func (*GetAuthorResponse) ProtoMessage() {}
 
 func (x *GetAuthorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[5]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -371,7 +439,7 @@ func (x *GetAuthorResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAuthorResponse.ProtoReflect.Descriptor instead.
 func (*GetAuthorResponse) Descriptor() ([]byte, []int) {
-	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{5}
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetAuthorResponse) GetAuthor() *Author {
@@ -390,7 +458,7 @@ type ListAuthorsRequest struct {
 
 func (x *ListAuthorsRequest) Reset() {
 	*x = ListAuthorsRequest{}
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[6]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -402,7 +470,7 @@ func (x *ListAuthorsRequest) String() string {
 func (*ListAuthorsRequest) ProtoMessage() {}
 
 func (x *ListAuthorsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[6]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -415,7 +483,7 @@ func (x *ListAuthorsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAuthorsRequest.ProtoReflect.Descriptor instead.
 func (*ListAuthorsRequest) Descriptor() ([]byte, []int) {
-	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{6}
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ListAuthorsRequest) GetQuery() string {
@@ -434,7 +502,7 @@ type ListAuthorsResponse struct {
 
 func (x *ListAuthorsResponse) Reset() {
 	*x = ListAuthorsResponse{}
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[7]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -446,7 +514,7 @@ func (x *ListAuthorsResponse) String() string {
 func (*ListAuthorsResponse) ProtoMessage() {}
 
 func (x *ListAuthorsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[7]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -459,12 +527,132 @@ func (x *ListAuthorsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAuthorsResponse.ProtoReflect.Descriptor instead.
 func (*ListAuthorsResponse) Descriptor() ([]byte, []int) {
-	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{7}
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListAuthorsResponse) GetAuthors() []*Author {
 	if x != nil {
 		return x.Authors
+	}
+	return nil
+}
+
+type UpdateAuthorRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          *string                `protobuf:"bytes,2,opt,name=name,proto3,oneof" json:"name,omitempty"`
+	GoodreadsId   *string                `protobuf:"bytes,3,opt,name=goodreads_id,json=goodreadsId,proto3,oneof" json:"goodreads_id,omitempty"`
+	Monitored     *bool                  `protobuf:"varint,4,opt,name=monitored,proto3,oneof" json:"monitored,omitempty"`
+	Path          *string                `protobuf:"bytes,5,opt,name=path,proto3,oneof" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateAuthorRequest) Reset() {
+	*x = UpdateAuthorRequest{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateAuthorRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateAuthorRequest) ProtoMessage() {}
+
+func (x *UpdateAuthorRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateAuthorRequest.ProtoReflect.Descriptor instead.
+func (*UpdateAuthorRequest) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *UpdateAuthorRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpdateAuthorRequest) GetName() string {
+	if x != nil && x.Name != nil {
+		return *x.Name
+	}
+	return ""
+}
+
+func (x *UpdateAuthorRequest) GetGoodreadsId() string {
+	if x != nil && x.GoodreadsId != nil {
+		return *x.GoodreadsId
+	}
+	return ""
+}
+
+func (x *UpdateAuthorRequest) GetMonitored() bool {
+	if x != nil && x.Monitored != nil {
+		return *x.Monitored
+	}
+	return false
+}
+
+func (x *UpdateAuthorRequest) GetPath() string {
+	if x != nil && x.Path != nil {
+		return *x.Path
+	}
+	return ""
+}
+
+type UpdateAuthorResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Author        *Author                `protobuf:"bytes,1,opt,name=author,proto3" json:"author,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateAuthorResponse) Reset() {
+	*x = UpdateAuthorResponse{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateAuthorResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateAuthorResponse) ProtoMessage() {}
+
+func (x *UpdateAuthorResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateAuthorResponse.ProtoReflect.Descriptor instead.
+func (*UpdateAuthorResponse) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *UpdateAuthorResponse) GetAuthor() *Author {
+	if x != nil {
+		return x.Author
 	}
 	return nil
 }
@@ -479,7 +667,7 @@ type RemoveAuthorRequest struct {
 
 func (x *RemoveAuthorRequest) Reset() {
 	*x = RemoveAuthorRequest{}
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[8]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -491,7 +679,7 @@ func (x *RemoveAuthorRequest) String() string {
 func (*RemoveAuthorRequest) ProtoMessage() {}
 
 func (x *RemoveAuthorRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[8]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -504,7 +692,7 @@ func (x *RemoveAuthorRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveAuthorRequest.ProtoReflect.Descriptor instead.
 func (*RemoveAuthorRequest) Descriptor() ([]byte, []int) {
-	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{8}
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *RemoveAuthorRequest) GetId() string {
@@ -530,7 +718,7 @@ type RemoveAuthorResponse struct {
 
 func (x *RemoveAuthorResponse) Reset() {
 	*x = RemoveAuthorResponse{}
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[9]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -542,7 +730,7 @@ func (x *RemoveAuthorResponse) String() string {
 func (*RemoveAuthorResponse) ProtoMessage() {}
 
 func (x *RemoveAuthorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[9]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -555,7 +743,7 @@ func (x *RemoveAuthorResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveAuthorResponse.ProtoReflect.Descriptor instead.
 func (*RemoveAuthorResponse) Descriptor() ([]byte, []int) {
-	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{9}
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *RemoveAuthorResponse) GetSuccess() bool {
@@ -578,7 +766,7 @@ type AddBookRequest struct {
 
 func (x *AddBookRequest) Reset() {
 	*x = AddBookRequest{}
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[10]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -590,7 +778,7 @@ func (x *AddBookRequest) String() string {
 func (*AddBookRequest) ProtoMessage() {}
 
 func (x *AddBookRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[10]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -603,7 +791,7 @@ func (x *AddBookRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddBookRequest.ProtoReflect.Descriptor instead.
 func (*AddBookRequest) Descriptor() ([]byte, []int) {
-	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{10}
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *AddBookRequest) GetAuthorId() string {
@@ -650,7 +838,7 @@ type AddBookResponse struct {
 
 func (x *AddBookResponse) Reset() {
 	*x = AddBookResponse{}
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[11]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -662,7 +850,7 @@ func (x *AddBookResponse) String() string {
 func (*AddBookResponse) ProtoMessage() {}
 
 func (x *AddBookResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[11]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -675,10 +863,98 @@ func (x *AddBookResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddBookResponse.ProtoReflect.Descriptor instead.
 func (*AddBookResponse) Descriptor() ([]byte, []int) {
-	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{11}
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *AddBookResponse) GetBook() *Book {
+	if x != nil {
+		return x.Book
+	}
+	return nil
+}
+
+type GetBookRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetBookRequest) Reset() {
+	*x = GetBookRequest{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetBookRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetBookRequest) ProtoMessage() {}
+
+func (x *GetBookRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetBookRequest.ProtoReflect.Descriptor instead.
+func (*GetBookRequest) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetBookRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type GetBookResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Book          *Book                  `protobuf:"bytes,1,opt,name=book,proto3" json:"book,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetBookResponse) Reset() {
+	*x = GetBookResponse{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetBookResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetBookResponse) ProtoMessage() {}
+
+func (x *GetBookResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetBookResponse.ProtoReflect.Descriptor instead.
+func (*GetBookResponse) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *GetBookResponse) GetBook() *Book {
 	if x != nil {
 		return x.Book
 	}
@@ -694,7 +970,7 @@ type ListBooksRequest struct {
 
 func (x *ListBooksRequest) Reset() {
 	*x = ListBooksRequest{}
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[12]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -706,7 +982,7 @@ func (x *ListBooksRequest) String() string {
 func (*ListBooksRequest) ProtoMessage() {}
 
 func (x *ListBooksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[12]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -719,7 +995,7 @@ func (x *ListBooksRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBooksRequest.ProtoReflect.Descriptor instead.
 func (*ListBooksRequest) Descriptor() ([]byte, []int) {
-	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{12}
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ListBooksRequest) GetAuthorId() string {
@@ -738,7 +1014,7 @@ type ListBooksResponse struct {
 
 func (x *ListBooksResponse) Reset() {
 	*x = ListBooksResponse{}
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[13]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -750,7 +1026,7 @@ func (x *ListBooksResponse) String() string {
 func (*ListBooksResponse) ProtoMessage() {}
 
 func (x *ListBooksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_muxcore_books_v1_books_proto_msgTypes[13]
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -763,12 +1039,720 @@ func (x *ListBooksResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBooksResponse.ProtoReflect.Descriptor instead.
 func (*ListBooksResponse) Descriptor() ([]byte, []int) {
-	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{13}
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ListBooksResponse) GetBooks() []*Book {
 	if x != nil {
 		return x.Books
+	}
+	return nil
+}
+
+type UpdateBookRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         *string                `protobuf:"bytes,2,opt,name=title,proto3,oneof" json:"title,omitempty"`
+	Isbn          *string                `protobuf:"bytes,3,opt,name=isbn,proto3,oneof" json:"isbn,omitempty"`
+	Year          *int32                 `protobuf:"varint,4,opt,name=year,proto3,oneof" json:"year,omitempty"`
+	Monitored     *bool                  `protobuf:"varint,5,opt,name=monitored,proto3,oneof" json:"monitored,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateBookRequest) Reset() {
+	*x = UpdateBookRequest{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateBookRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateBookRequest) ProtoMessage() {}
+
+func (x *UpdateBookRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateBookRequest.ProtoReflect.Descriptor instead.
+func (*UpdateBookRequest) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *UpdateBookRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpdateBookRequest) GetTitle() string {
+	if x != nil && x.Title != nil {
+		return *x.Title
+	}
+	return ""
+}
+
+func (x *UpdateBookRequest) GetIsbn() string {
+	if x != nil && x.Isbn != nil {
+		return *x.Isbn
+	}
+	return ""
+}
+
+func (x *UpdateBookRequest) GetYear() int32 {
+	if x != nil && x.Year != nil {
+		return *x.Year
+	}
+	return 0
+}
+
+func (x *UpdateBookRequest) GetMonitored() bool {
+	if x != nil && x.Monitored != nil {
+		return *x.Monitored
+	}
+	return false
+}
+
+type UpdateBookResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Book          *Book                  `protobuf:"bytes,1,opt,name=book,proto3" json:"book,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateBookResponse) Reset() {
+	*x = UpdateBookResponse{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateBookResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateBookResponse) ProtoMessage() {}
+
+func (x *UpdateBookResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateBookResponse.ProtoReflect.Descriptor instead.
+func (*UpdateBookResponse) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *UpdateBookResponse) GetBook() *Book {
+	if x != nil {
+		return x.Book
+	}
+	return nil
+}
+
+type RemoveBookRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	DeleteFiles   bool                   `protobuf:"varint,2,opt,name=delete_files,json=deleteFiles,proto3" json:"delete_files,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveBookRequest) Reset() {
+	*x = RemoveBookRequest{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveBookRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveBookRequest) ProtoMessage() {}
+
+func (x *RemoveBookRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveBookRequest.ProtoReflect.Descriptor instead.
+func (*RemoveBookRequest) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *RemoveBookRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *RemoveBookRequest) GetDeleteFiles() bool {
+	if x != nil {
+		return x.DeleteFiles
+	}
+	return false
+}
+
+type RemoveBookResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveBookResponse) Reset() {
+	*x = RemoveBookResponse{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveBookResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveBookResponse) ProtoMessage() {}
+
+func (x *RemoveBookResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveBookResponse.ProtoReflect.Descriptor instead.
+func (*RemoveBookResponse) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *RemoveBookResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type ScanLibraryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScanLibraryRequest) Reset() {
+	*x = ScanLibraryRequest{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScanLibraryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScanLibraryRequest) ProtoMessage() {}
+
+func (x *ScanLibraryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScanLibraryRequest.ProtoReflect.Descriptor instead.
+func (*ScanLibraryRequest) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{23}
+}
+
+type ScanLibraryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FilesFound    int32                  `protobuf:"varint,1,opt,name=files_found,json=filesFound,proto3" json:"files_found,omitempty"`
+	FilesImported int32                  `protobuf:"varint,2,opt,name=files_imported,json=filesImported,proto3" json:"files_imported,omitempty"`
+	FilesSkipped  int32                  `protobuf:"varint,3,opt,name=files_skipped,json=filesSkipped,proto3" json:"files_skipped,omitempty"`
+	FilesRemoved  int32                  `protobuf:"varint,4,opt,name=files_removed,json=filesRemoved,proto3" json:"files_removed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScanLibraryResponse) Reset() {
+	*x = ScanLibraryResponse{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScanLibraryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScanLibraryResponse) ProtoMessage() {}
+
+func (x *ScanLibraryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScanLibraryResponse.ProtoReflect.Descriptor instead.
+func (*ScanLibraryResponse) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *ScanLibraryResponse) GetFilesFound() int32 {
+	if x != nil {
+		return x.FilesFound
+	}
+	return 0
+}
+
+func (x *ScanLibraryResponse) GetFilesImported() int32 {
+	if x != nil {
+		return x.FilesImported
+	}
+	return 0
+}
+
+func (x *ScanLibraryResponse) GetFilesSkipped() int32 {
+	if x != nil {
+		return x.FilesSkipped
+	}
+	return 0
+}
+
+func (x *ScanLibraryResponse) GetFilesRemoved() int32 {
+	if x != nil {
+		return x.FilesRemoved
+	}
+	return 0
+}
+
+type ListBookFilesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BookId        string                 `protobuf:"bytes,1,opt,name=book_id,json=bookId,proto3" json:"book_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBookFilesRequest) Reset() {
+	*x = ListBookFilesRequest{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBookFilesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBookFilesRequest) ProtoMessage() {}
+
+func (x *ListBookFilesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBookFilesRequest.ProtoReflect.Descriptor instead.
+func (*ListBookFilesRequest) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *ListBookFilesRequest) GetBookId() string {
+	if x != nil {
+		return x.BookId
+	}
+	return ""
+}
+
+type ListBookFilesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Files         []*BookFile            `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBookFilesResponse) Reset() {
+	*x = ListBookFilesResponse{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBookFilesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBookFilesResponse) ProtoMessage() {}
+
+func (x *ListBookFilesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBookFilesResponse.ProtoReflect.Descriptor instead.
+func (*ListBookFilesResponse) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *ListBookFilesResponse) GetFiles() []*BookFile {
+	if x != nil {
+		return x.Files
+	}
+	return nil
+}
+
+type ListMissingRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	AuthorId      string                 `protobuf:"bytes,3,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMissingRequest) Reset() {
+	*x = ListMissingRequest{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMissingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMissingRequest) ProtoMessage() {}
+
+func (x *ListMissingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMissingRequest.ProtoReflect.Descriptor instead.
+func (*ListMissingRequest) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *ListMissingRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListMissingRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListMissingRequest) GetAuthorId() string {
+	if x != nil {
+		return x.AuthorId
+	}
+	return ""
+}
+
+type MissingBookItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BookId        string                 `protobuf:"bytes,1,opt,name=book_id,json=bookId,proto3" json:"book_id,omitempty"`
+	AuthorId      string                 `protobuf:"bytes,2,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	AuthorName    string                 `protobuf:"bytes,4,opt,name=author_name,json=authorName,proto3" json:"author_name,omitempty"`
+	Year          int32                  `protobuf:"varint,5,opt,name=year,proto3" json:"year,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MissingBookItem) Reset() {
+	*x = MissingBookItem{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MissingBookItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MissingBookItem) ProtoMessage() {}
+
+func (x *MissingBookItem) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MissingBookItem.ProtoReflect.Descriptor instead.
+func (*MissingBookItem) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *MissingBookItem) GetBookId() string {
+	if x != nil {
+		return x.BookId
+	}
+	return ""
+}
+
+func (x *MissingBookItem) GetAuthorId() string {
+	if x != nil {
+		return x.AuthorId
+	}
+	return ""
+}
+
+func (x *MissingBookItem) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *MissingBookItem) GetAuthorName() string {
+	if x != nil {
+		return x.AuthorName
+	}
+	return ""
+}
+
+func (x *MissingBookItem) GetYear() int32 {
+	if x != nil {
+		return x.Year
+	}
+	return 0
+}
+
+type ListMissingResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*MissingBookItem     `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMissingResponse) Reset() {
+	*x = ListMissingResponse{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMissingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMissingResponse) ProtoMessage() {}
+
+func (x *ListMissingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMissingResponse.ProtoReflect.Descriptor instead.
+func (*ListMissingResponse) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *ListMissingResponse) GetItems() []*MissingBookItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListMissingResponse) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *ListMissingResponse) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListMissingResponse) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ImportBookFileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BookId        string                 `protobuf:"bytes,1,opt,name=book_id,json=bookId,proto3" json:"book_id,omitempty"`
+	Path          string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImportBookFileRequest) Reset() {
+	*x = ImportBookFileRequest{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImportBookFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportBookFileRequest) ProtoMessage() {}
+
+func (x *ImportBookFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportBookFileRequest.ProtoReflect.Descriptor instead.
+func (*ImportBookFileRequest) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ImportBookFileRequest) GetBookId() string {
+	if x != nil {
+		return x.BookId
+	}
+	return ""
+}
+
+func (x *ImportBookFileRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type ImportBookFileResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	File          *BookFile              `protobuf:"bytes,1,opt,name=file,proto3" json:"file,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImportBookFileResponse) Reset() {
+	*x = ImportBookFileResponse{}
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImportBookFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportBookFileResponse) ProtoMessage() {}
+
+func (x *ImportBookFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_muxcore_books_v1_books_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportBookFileResponse.ProtoReflect.Descriptor instead.
+func (*ImportBookFileResponse) Descriptor() ([]byte, []int) {
+	return file_muxcore_books_v1_books_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *ImportBookFileResponse) GetFile() *BookFile {
+	if x != nil {
+		return x.File
 	}
 	return nil
 }
@@ -783,14 +1767,19 @@ const file_muxcore_books_v1_books_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12!\n" +
 	"\fgoodreads_id\x18\x03 \x01(\tR\vgoodreadsId\x12\x1c\n" +
 	"\tmonitored\x18\x04 \x01(\bR\tmonitored\x12\x12\n" +
-	"\x04path\x18\x05 \x01(\tR\x04path\"\x8f\x01\n" +
+	"\x04path\x18\x05 \x01(\tR\x04path\"D\n" +
+	"\bBookFile\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
+	"\x04path\x18\x03 \x01(\tR\x04path\"\xc1\x01\n" +
 	"\x04Book\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tauthor_id\x18\x02 \x01(\tR\bauthorId\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x12\n" +
 	"\x04isbn\x18\x04 \x01(\tR\x04isbn\x12\x12\n" +
 	"\x04year\x18\x05 \x01(\x05R\x04year\x12\x1c\n" +
-	"\tmonitored\x18\x06 \x01(\bR\tmonitored\"{\n" +
+	"\tmonitored\x18\x06 \x01(\bR\tmonitored\x120\n" +
+	"\x05files\x18\a \x03(\v2\x1a.muxcore.books.v1.BookFileR\x05files\"{\n" +
 	"\x10AddAuthorRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
 	"\fgoodreads_id\x18\x02 \x01(\tR\vgoodreadsId\x12\x1c\n" +
@@ -805,7 +1794,20 @@ const file_muxcore_books_v1_books_proto_rawDesc = "" +
 	"\x12ListAuthorsRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\"I\n" +
 	"\x13ListAuthorsResponse\x122\n" +
-	"\aauthors\x18\x01 \x03(\v2\x18.muxcore.books.v1.AuthorR\aauthors\"H\n" +
+	"\aauthors\x18\x01 \x03(\v2\x18.muxcore.books.v1.AuthorR\aauthors\"\xd3\x01\n" +
+	"\x13UpdateAuthorRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
+	"\x04name\x18\x02 \x01(\tH\x00R\x04name\x88\x01\x01\x12&\n" +
+	"\fgoodreads_id\x18\x03 \x01(\tH\x01R\vgoodreadsId\x88\x01\x01\x12!\n" +
+	"\tmonitored\x18\x04 \x01(\bH\x02R\tmonitored\x88\x01\x01\x12\x17\n" +
+	"\x04path\x18\x05 \x01(\tH\x03R\x04path\x88\x01\x01B\a\n" +
+	"\x05_nameB\x0f\n" +
+	"\r_goodreads_idB\f\n" +
+	"\n" +
+	"_monitoredB\a\n" +
+	"\x05_path\"H\n" +
+	"\x14UpdateAuthorResponse\x120\n" +
+	"\x06author\x18\x01 \x01(\v2\x18.muxcore.books.v1.AuthorR\x06author\"H\n" +
 	"\x13RemoveAuthorRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
 	"\fdelete_files\x18\x02 \x01(\bR\vdeleteFiles\"0\n" +
@@ -818,18 +1820,83 @@ const file_muxcore_books_v1_books_proto_rawDesc = "" +
 	"\x04year\x18\x04 \x01(\x05R\x04year\x12\x1c\n" +
 	"\tmonitored\x18\x05 \x01(\bR\tmonitored\"=\n" +
 	"\x0fAddBookResponse\x12*\n" +
+	"\x04book\x18\x01 \x01(\v2\x16.muxcore.books.v1.BookR\x04book\" \n" +
+	"\x0eGetBookRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"=\n" +
+	"\x0fGetBookResponse\x12*\n" +
 	"\x04book\x18\x01 \x01(\v2\x16.muxcore.books.v1.BookR\x04book\"/\n" +
 	"\x10ListBooksRequest\x12\x1b\n" +
 	"\tauthor_id\x18\x01 \x01(\tR\bauthorId\"A\n" +
 	"\x11ListBooksResponse\x12,\n" +
-	"\x05books\x18\x01 \x03(\v2\x16.muxcore.books.v1.BookR\x05books2\xa4\x04\n" +
+	"\x05books\x18\x01 \x03(\v2\x16.muxcore.books.v1.BookR\x05books\"\xbd\x01\n" +
+	"\x11UpdateBookRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
+	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12\x17\n" +
+	"\x04isbn\x18\x03 \x01(\tH\x01R\x04isbn\x88\x01\x01\x12\x17\n" +
+	"\x04year\x18\x04 \x01(\x05H\x02R\x04year\x88\x01\x01\x12!\n" +
+	"\tmonitored\x18\x05 \x01(\bH\x03R\tmonitored\x88\x01\x01B\b\n" +
+	"\x06_titleB\a\n" +
+	"\x05_isbnB\a\n" +
+	"\x05_yearB\f\n" +
+	"\n" +
+	"_monitored\"@\n" +
+	"\x12UpdateBookResponse\x12*\n" +
+	"\x04book\x18\x01 \x01(\v2\x16.muxcore.books.v1.BookR\x04book\"F\n" +
+	"\x11RemoveBookRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
+	"\fdelete_files\x18\x02 \x01(\bR\vdeleteFiles\".\n" +
+	"\x12RemoveBookResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x14\n" +
+	"\x12ScanLibraryRequest\"\xa7\x01\n" +
+	"\x13ScanLibraryResponse\x12\x1f\n" +
+	"\vfiles_found\x18\x01 \x01(\x05R\n" +
+	"filesFound\x12%\n" +
+	"\x0efiles_imported\x18\x02 \x01(\x05R\rfilesImported\x12#\n" +
+	"\rfiles_skipped\x18\x03 \x01(\x05R\ffilesSkipped\x12#\n" +
+	"\rfiles_removed\x18\x04 \x01(\x05R\ffilesRemoved\"/\n" +
+	"\x14ListBookFilesRequest\x12\x17\n" +
+	"\abook_id\x18\x01 \x01(\tR\x06bookId\"I\n" +
+	"\x15ListBookFilesResponse\x120\n" +
+	"\x05files\x18\x01 \x03(\v2\x1a.muxcore.books.v1.BookFileR\x05files\"b\n" +
+	"\x12ListMissingRequest\x12\x12\n" +
+	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x1b\n" +
+	"\tauthor_id\x18\x03 \x01(\tR\bauthorId\"\x92\x01\n" +
+	"\x0fMissingBookItem\x12\x17\n" +
+	"\abook_id\x18\x01 \x01(\tR\x06bookId\x12\x1b\n" +
+	"\tauthor_id\x18\x02 \x01(\tR\bauthorId\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12\x1f\n" +
+	"\vauthor_name\x18\x04 \x01(\tR\n" +
+	"authorName\x12\x12\n" +
+	"\x04year\x18\x05 \x01(\x05R\x04year\"\x95\x01\n" +
+	"\x13ListMissingResponse\x127\n" +
+	"\x05items\x18\x01 \x03(\v2!.muxcore.books.v1.MissingBookItemR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"D\n" +
+	"\x15ImportBookFileRequest\x12\x17\n" +
+	"\abook_id\x18\x01 \x01(\tR\x06bookId\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"H\n" +
+	"\x16ImportBookFileResponse\x12.\n" +
+	"\x04file\x18\x01 \x01(\v2\x1a.muxcore.books.v1.BookFileR\x04file2\x84\n" +
+	"\n" +
 	"\x15BookManagementService\x12T\n" +
 	"\tAddAuthor\x12\".muxcore.books.v1.AddAuthorRequest\x1a#.muxcore.books.v1.AddAuthorResponse\x12T\n" +
 	"\tGetAuthor\x12\".muxcore.books.v1.GetAuthorRequest\x1a#.muxcore.books.v1.GetAuthorResponse\x12Z\n" +
 	"\vListAuthors\x12$.muxcore.books.v1.ListAuthorsRequest\x1a%.muxcore.books.v1.ListAuthorsResponse\x12]\n" +
+	"\fUpdateAuthor\x12%.muxcore.books.v1.UpdateAuthorRequest\x1a&.muxcore.books.v1.UpdateAuthorResponse\x12]\n" +
 	"\fRemoveAuthor\x12%.muxcore.books.v1.RemoveAuthorRequest\x1a&.muxcore.books.v1.RemoveAuthorResponse\x12N\n" +
-	"\aAddBook\x12 .muxcore.books.v1.AddBookRequest\x1a!.muxcore.books.v1.AddBookResponse\x12T\n" +
-	"\tListBooks\x12\".muxcore.books.v1.ListBooksRequest\x1a#.muxcore.books.v1.ListBooksResponseBIZGgithub.com/Muxcore-Media/media-books/proto/gen/muxcore/books/v1;booksv1b\x06proto3"
+	"\aAddBook\x12 .muxcore.books.v1.AddBookRequest\x1a!.muxcore.books.v1.AddBookResponse\x12N\n" +
+	"\aGetBook\x12 .muxcore.books.v1.GetBookRequest\x1a!.muxcore.books.v1.GetBookResponse\x12T\n" +
+	"\tListBooks\x12\".muxcore.books.v1.ListBooksRequest\x1a#.muxcore.books.v1.ListBooksResponse\x12W\n" +
+	"\n" +
+	"UpdateBook\x12#.muxcore.books.v1.UpdateBookRequest\x1a$.muxcore.books.v1.UpdateBookResponse\x12W\n" +
+	"\n" +
+	"RemoveBook\x12#.muxcore.books.v1.RemoveBookRequest\x1a$.muxcore.books.v1.RemoveBookResponse\x12Z\n" +
+	"\vScanLibrary\x12$.muxcore.books.v1.ScanLibraryRequest\x1a%.muxcore.books.v1.ScanLibraryResponse\x12`\n" +
+	"\rListBookFiles\x12&.muxcore.books.v1.ListBookFilesRequest\x1a'.muxcore.books.v1.ListBookFilesResponse\x12Z\n" +
+	"\vListMissing\x12$.muxcore.books.v1.ListMissingRequest\x1a%.muxcore.books.v1.ListMissingResponse\x12c\n" +
+	"\x0eImportBookFile\x12'.muxcore.books.v1.ImportBookFileRequest\x1a(.muxcore.books.v1.ImportBookFileResponseBIZGgithub.com/Muxcore-Media/media-books/proto/gen/muxcore/books/v1;booksv1b\x06proto3"
 
 var (
 	file_muxcore_books_v1_books_proto_rawDescOnce sync.Once
@@ -843,46 +1910,87 @@ func file_muxcore_books_v1_books_proto_rawDescGZIP() []byte {
 	return file_muxcore_books_v1_books_proto_rawDescData
 }
 
-var file_muxcore_books_v1_books_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_muxcore_books_v1_books_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
 var file_muxcore_books_v1_books_proto_goTypes = []any{
-	(*Author)(nil),               // 0: muxcore.books.v1.Author
-	(*Book)(nil),                 // 1: muxcore.books.v1.Book
-	(*AddAuthorRequest)(nil),     // 2: muxcore.books.v1.AddAuthorRequest
-	(*AddAuthorResponse)(nil),    // 3: muxcore.books.v1.AddAuthorResponse
-	(*GetAuthorRequest)(nil),     // 4: muxcore.books.v1.GetAuthorRequest
-	(*GetAuthorResponse)(nil),    // 5: muxcore.books.v1.GetAuthorResponse
-	(*ListAuthorsRequest)(nil),   // 6: muxcore.books.v1.ListAuthorsRequest
-	(*ListAuthorsResponse)(nil),  // 7: muxcore.books.v1.ListAuthorsResponse
-	(*RemoveAuthorRequest)(nil),  // 8: muxcore.books.v1.RemoveAuthorRequest
-	(*RemoveAuthorResponse)(nil), // 9: muxcore.books.v1.RemoveAuthorResponse
-	(*AddBookRequest)(nil),       // 10: muxcore.books.v1.AddBookRequest
-	(*AddBookResponse)(nil),      // 11: muxcore.books.v1.AddBookResponse
-	(*ListBooksRequest)(nil),     // 12: muxcore.books.v1.ListBooksRequest
-	(*ListBooksResponse)(nil),    // 13: muxcore.books.v1.ListBooksResponse
+	(*Author)(nil),                 // 0: muxcore.books.v1.Author
+	(*BookFile)(nil),               // 1: muxcore.books.v1.BookFile
+	(*Book)(nil),                   // 2: muxcore.books.v1.Book
+	(*AddAuthorRequest)(nil),       // 3: muxcore.books.v1.AddAuthorRequest
+	(*AddAuthorResponse)(nil),      // 4: muxcore.books.v1.AddAuthorResponse
+	(*GetAuthorRequest)(nil),       // 5: muxcore.books.v1.GetAuthorRequest
+	(*GetAuthorResponse)(nil),      // 6: muxcore.books.v1.GetAuthorResponse
+	(*ListAuthorsRequest)(nil),     // 7: muxcore.books.v1.ListAuthorsRequest
+	(*ListAuthorsResponse)(nil),    // 8: muxcore.books.v1.ListAuthorsResponse
+	(*UpdateAuthorRequest)(nil),    // 9: muxcore.books.v1.UpdateAuthorRequest
+	(*UpdateAuthorResponse)(nil),   // 10: muxcore.books.v1.UpdateAuthorResponse
+	(*RemoveAuthorRequest)(nil),    // 11: muxcore.books.v1.RemoveAuthorRequest
+	(*RemoveAuthorResponse)(nil),   // 12: muxcore.books.v1.RemoveAuthorResponse
+	(*AddBookRequest)(nil),         // 13: muxcore.books.v1.AddBookRequest
+	(*AddBookResponse)(nil),        // 14: muxcore.books.v1.AddBookResponse
+	(*GetBookRequest)(nil),         // 15: muxcore.books.v1.GetBookRequest
+	(*GetBookResponse)(nil),        // 16: muxcore.books.v1.GetBookResponse
+	(*ListBooksRequest)(nil),       // 17: muxcore.books.v1.ListBooksRequest
+	(*ListBooksResponse)(nil),      // 18: muxcore.books.v1.ListBooksResponse
+	(*UpdateBookRequest)(nil),      // 19: muxcore.books.v1.UpdateBookRequest
+	(*UpdateBookResponse)(nil),     // 20: muxcore.books.v1.UpdateBookResponse
+	(*RemoveBookRequest)(nil),      // 21: muxcore.books.v1.RemoveBookRequest
+	(*RemoveBookResponse)(nil),     // 22: muxcore.books.v1.RemoveBookResponse
+	(*ScanLibraryRequest)(nil),     // 23: muxcore.books.v1.ScanLibraryRequest
+	(*ScanLibraryResponse)(nil),    // 24: muxcore.books.v1.ScanLibraryResponse
+	(*ListBookFilesRequest)(nil),   // 25: muxcore.books.v1.ListBookFilesRequest
+	(*ListBookFilesResponse)(nil),  // 26: muxcore.books.v1.ListBookFilesResponse
+	(*ListMissingRequest)(nil),     // 27: muxcore.books.v1.ListMissingRequest
+	(*MissingBookItem)(nil),        // 28: muxcore.books.v1.MissingBookItem
+	(*ListMissingResponse)(nil),    // 29: muxcore.books.v1.ListMissingResponse
+	(*ImportBookFileRequest)(nil),  // 30: muxcore.books.v1.ImportBookFileRequest
+	(*ImportBookFileResponse)(nil), // 31: muxcore.books.v1.ImportBookFileResponse
 }
 var file_muxcore_books_v1_books_proto_depIdxs = []int32{
-	0,  // 0: muxcore.books.v1.AddAuthorResponse.author:type_name -> muxcore.books.v1.Author
-	0,  // 1: muxcore.books.v1.GetAuthorResponse.author:type_name -> muxcore.books.v1.Author
-	0,  // 2: muxcore.books.v1.ListAuthorsResponse.authors:type_name -> muxcore.books.v1.Author
-	1,  // 3: muxcore.books.v1.AddBookResponse.book:type_name -> muxcore.books.v1.Book
-	1,  // 4: muxcore.books.v1.ListBooksResponse.books:type_name -> muxcore.books.v1.Book
-	2,  // 5: muxcore.books.v1.BookManagementService.AddAuthor:input_type -> muxcore.books.v1.AddAuthorRequest
-	4,  // 6: muxcore.books.v1.BookManagementService.GetAuthor:input_type -> muxcore.books.v1.GetAuthorRequest
-	6,  // 7: muxcore.books.v1.BookManagementService.ListAuthors:input_type -> muxcore.books.v1.ListAuthorsRequest
-	8,  // 8: muxcore.books.v1.BookManagementService.RemoveAuthor:input_type -> muxcore.books.v1.RemoveAuthorRequest
-	10, // 9: muxcore.books.v1.BookManagementService.AddBook:input_type -> muxcore.books.v1.AddBookRequest
-	12, // 10: muxcore.books.v1.BookManagementService.ListBooks:input_type -> muxcore.books.v1.ListBooksRequest
-	3,  // 11: muxcore.books.v1.BookManagementService.AddAuthor:output_type -> muxcore.books.v1.AddAuthorResponse
-	5,  // 12: muxcore.books.v1.BookManagementService.GetAuthor:output_type -> muxcore.books.v1.GetAuthorResponse
-	7,  // 13: muxcore.books.v1.BookManagementService.ListAuthors:output_type -> muxcore.books.v1.ListAuthorsResponse
-	9,  // 14: muxcore.books.v1.BookManagementService.RemoveAuthor:output_type -> muxcore.books.v1.RemoveAuthorResponse
-	11, // 15: muxcore.books.v1.BookManagementService.AddBook:output_type -> muxcore.books.v1.AddBookResponse
-	13, // 16: muxcore.books.v1.BookManagementService.ListBooks:output_type -> muxcore.books.v1.ListBooksResponse
-	11, // [11:17] is the sub-list for method output_type
-	5,  // [5:11] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	1,  // 0: muxcore.books.v1.Book.files:type_name -> muxcore.books.v1.BookFile
+	0,  // 1: muxcore.books.v1.AddAuthorResponse.author:type_name -> muxcore.books.v1.Author
+	0,  // 2: muxcore.books.v1.GetAuthorResponse.author:type_name -> muxcore.books.v1.Author
+	0,  // 3: muxcore.books.v1.ListAuthorsResponse.authors:type_name -> muxcore.books.v1.Author
+	0,  // 4: muxcore.books.v1.UpdateAuthorResponse.author:type_name -> muxcore.books.v1.Author
+	2,  // 5: muxcore.books.v1.AddBookResponse.book:type_name -> muxcore.books.v1.Book
+	2,  // 6: muxcore.books.v1.GetBookResponse.book:type_name -> muxcore.books.v1.Book
+	2,  // 7: muxcore.books.v1.ListBooksResponse.books:type_name -> muxcore.books.v1.Book
+	2,  // 8: muxcore.books.v1.UpdateBookResponse.book:type_name -> muxcore.books.v1.Book
+	1,  // 9: muxcore.books.v1.ListBookFilesResponse.files:type_name -> muxcore.books.v1.BookFile
+	28, // 10: muxcore.books.v1.ListMissingResponse.items:type_name -> muxcore.books.v1.MissingBookItem
+	1,  // 11: muxcore.books.v1.ImportBookFileResponse.file:type_name -> muxcore.books.v1.BookFile
+	3,  // 12: muxcore.books.v1.BookManagementService.AddAuthor:input_type -> muxcore.books.v1.AddAuthorRequest
+	5,  // 13: muxcore.books.v1.BookManagementService.GetAuthor:input_type -> muxcore.books.v1.GetAuthorRequest
+	7,  // 14: muxcore.books.v1.BookManagementService.ListAuthors:input_type -> muxcore.books.v1.ListAuthorsRequest
+	9,  // 15: muxcore.books.v1.BookManagementService.UpdateAuthor:input_type -> muxcore.books.v1.UpdateAuthorRequest
+	11, // 16: muxcore.books.v1.BookManagementService.RemoveAuthor:input_type -> muxcore.books.v1.RemoveAuthorRequest
+	13, // 17: muxcore.books.v1.BookManagementService.AddBook:input_type -> muxcore.books.v1.AddBookRequest
+	15, // 18: muxcore.books.v1.BookManagementService.GetBook:input_type -> muxcore.books.v1.GetBookRequest
+	17, // 19: muxcore.books.v1.BookManagementService.ListBooks:input_type -> muxcore.books.v1.ListBooksRequest
+	19, // 20: muxcore.books.v1.BookManagementService.UpdateBook:input_type -> muxcore.books.v1.UpdateBookRequest
+	21, // 21: muxcore.books.v1.BookManagementService.RemoveBook:input_type -> muxcore.books.v1.RemoveBookRequest
+	23, // 22: muxcore.books.v1.BookManagementService.ScanLibrary:input_type -> muxcore.books.v1.ScanLibraryRequest
+	25, // 23: muxcore.books.v1.BookManagementService.ListBookFiles:input_type -> muxcore.books.v1.ListBookFilesRequest
+	27, // 24: muxcore.books.v1.BookManagementService.ListMissing:input_type -> muxcore.books.v1.ListMissingRequest
+	30, // 25: muxcore.books.v1.BookManagementService.ImportBookFile:input_type -> muxcore.books.v1.ImportBookFileRequest
+	4,  // 26: muxcore.books.v1.BookManagementService.AddAuthor:output_type -> muxcore.books.v1.AddAuthorResponse
+	6,  // 27: muxcore.books.v1.BookManagementService.GetAuthor:output_type -> muxcore.books.v1.GetAuthorResponse
+	8,  // 28: muxcore.books.v1.BookManagementService.ListAuthors:output_type -> muxcore.books.v1.ListAuthorsResponse
+	10, // 29: muxcore.books.v1.BookManagementService.UpdateAuthor:output_type -> muxcore.books.v1.UpdateAuthorResponse
+	12, // 30: muxcore.books.v1.BookManagementService.RemoveAuthor:output_type -> muxcore.books.v1.RemoveAuthorResponse
+	14, // 31: muxcore.books.v1.BookManagementService.AddBook:output_type -> muxcore.books.v1.AddBookResponse
+	16, // 32: muxcore.books.v1.BookManagementService.GetBook:output_type -> muxcore.books.v1.GetBookResponse
+	18, // 33: muxcore.books.v1.BookManagementService.ListBooks:output_type -> muxcore.books.v1.ListBooksResponse
+	20, // 34: muxcore.books.v1.BookManagementService.UpdateBook:output_type -> muxcore.books.v1.UpdateBookResponse
+	22, // 35: muxcore.books.v1.BookManagementService.RemoveBook:output_type -> muxcore.books.v1.RemoveBookResponse
+	24, // 36: muxcore.books.v1.BookManagementService.ScanLibrary:output_type -> muxcore.books.v1.ScanLibraryResponse
+	26, // 37: muxcore.books.v1.BookManagementService.ListBookFiles:output_type -> muxcore.books.v1.ListBookFilesResponse
+	29, // 38: muxcore.books.v1.BookManagementService.ListMissing:output_type -> muxcore.books.v1.ListMissingResponse
+	31, // 39: muxcore.books.v1.BookManagementService.ImportBookFile:output_type -> muxcore.books.v1.ImportBookFileResponse
+	26, // [26:40] is the sub-list for method output_type
+	12, // [12:26] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_muxcore_books_v1_books_proto_init() }
@@ -890,13 +1998,15 @@ func file_muxcore_books_v1_books_proto_init() {
 	if File_muxcore_books_v1_books_proto != nil {
 		return
 	}
+	file_muxcore_books_v1_books_proto_msgTypes[9].OneofWrappers = []any{}
+	file_muxcore_books_v1_books_proto_msgTypes[19].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_muxcore_books_v1_books_proto_rawDesc), len(file_muxcore_books_v1_books_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   32,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
