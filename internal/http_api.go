@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -13,6 +14,8 @@ func (m *Module) registerBooksHTTPAPI(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/authors/{id}", m.handleGetAuthorHTTP)
 	mux.HandleFunc("GET /api/books", m.handleListBooksHTTP)
 	mux.HandleFunc("GET /api/missing", m.handleListMissingHTTP)
+	mux.HandleFunc("POST /api/scan", m.handleScanHTTP)
+	mux.HandleFunc("POST /api/books/{id}/import", m.handleImportBookHTTP)
 	mux.HandleFunc("GET /api/files/{id}/stream", m.handleStreamBookFileHTTP)
 }
 
@@ -104,25 +107,71 @@ func (m *Module) handleListMissingHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (m *Module) handleScanHTTP(w http.ResponseWriter, r *http.Request) {
+	if m.store == nil {
+		http.Error(w, `{"error":"store not open"}`, http.StatusServiceUnavailable)
+		return
+	}
+	res, err := m.ScanLibrary(r.Context())
+	if err != nil {
+		http.Error(w, fmtJSONError(err), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, map[string]int{
+		"files_found": res.FilesFound, "files_imported": res.FilesImported,
+		"files_skipped": res.FilesSkipped, "files_removed": res.FilesRemoved,
+	})
+}
+
+func (m *Module) handleImportBookHTTP(w http.ResponseWriter, r *http.Request) {
+	bookID := r.PathValue("id")
+	if bookID == "" {
+		http.Error(w, `{"error":"book id required"}`, http.StatusBadRequest)
+		return
+	}
+	if m.store == nil {
+		http.Error(w, `{"error":"store not open"}`, http.StatusServiceUnavailable)
+		return
+	}
+	var body struct {
+		Path string `json:"path"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, `{"error":"invalid json body"}`, http.StatusBadRequest)
+		return
+	}
+	f, err := m.store.ImportBookFile(r.Context(), bookID, body.Path, m.libraryRoot())
+	if err != nil {
+		status := http.StatusBadRequest
+		if strings.Contains(err.Error(), "not found") {
+			status = http.StatusNotFound
+		}
+		http.Error(w, fmtJSONError(err), status)
+		return
+	}
+	writeJSON(w, bookFileJSON{
+		ID: f.ID, BookID: f.BookID, Title: f.Title, Path: f.Path,
+		StreamURL: "/api/files/" + f.ID + "/stream",
+	})
+}
+
 func (m *Module) handleStreamBookFileHTTP(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" || m.store == nil {
 		http.NotFound(w, r)
 		return
 	}
-	files, err := m.store.ListBookFiles(r.Context(), "")
+	f, err := m.store.GetBookFile(r.Context(), id)
 	if err != nil {
-		http.Error(w, fmtJSONError(err), http.StatusInternalServerError)
+		http.NotFound(w, r)
 		return
 	}
-	var path string
-	for _, f := range files {
-		if f.ID == id {
-			path = f.Path
-			break
-		}
+	path, err := validateLibraryPath(f.Path, m.libraryRoot())
+	if err != nil {
+		http.NotFound(w, r)
+		return
 	}
-	if path == "" {
+	if _, err := os.Stat(path); err != nil {
 		http.NotFound(w, r)
 		return
 	}
@@ -192,9 +241,15 @@ func (m *Module) bookJSONWithFiles(ctx context.Context, b *Book) bookJSON {
 	}
 	out.Files = make([]bookFileJSON, 0, len(files))
 	for _, f := range files {
+		streamURL := ""
+		if _, err := validateLibraryPath(f.Path, m.libraryRoot()); err == nil {
+			if _, err := os.Stat(f.Path); err == nil {
+				streamURL = "/api/files/" + f.ID + "/stream"
+			}
+		}
 		out.Files = append(out.Files, bookFileJSON{
 			ID: f.ID, BookID: f.BookID, Title: f.Title, Path: f.Path,
-			StreamURL: "/stream/books/" + f.ID,
+			StreamURL: streamURL,
 		})
 	}
 	return out

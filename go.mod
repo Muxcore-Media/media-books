@@ -3,6 +3,7 @@ module github.com/Muxcore-Media/media-books
 go 1.26.5
 
 require (
+	github.com/Muxcore-Media/contracts-media-admin v0.1.0
 	github.com/Muxcore-Media/core/pkg/contracts v0.5.8
 	github.com/Muxcore-Media/core/sdk/go/module v0.5.8
 	github.com/google/uuid v1.6.0
@@ -26,6 +27,8 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
+
+replace github.com/Muxcore-Media/contracts-media-admin => ../contracts-media-admin
 
 replace github.com/Muxcore-Media/contracts-media => ../contracts-media
 

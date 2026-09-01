@@ -18,9 +18,25 @@ MuxCore sidecar module (`media-books`). Workspace deploy and SSH: [`../AGENTS.md
 - Cross-module events: prefer `github.com/Muxcore-Media/contracts-media/events` over deprecated `core/pkg/contracts` aliases.
 - Do not edit polluted workspace dumps (see `MASTER-ROADMAP.md` Appendix H).
 
+## Environment
+
+| Variable | Purpose |
+|----------|---------|
+| `BOOKS_DATA_DIR` | SQLite path parent (default `./data`; DB is `books.db`) |
+| `BOOKS_LIBRARY_DIR` | Ebook scan root (defaults to `BOOKS_DATA_DIR`) |
+| `MUXCORE_HTTP_ADDR` | HTTP/JSON API bind |
+
+## Operator HTTP (health port)
+
+- `GET /api/missing` — monitored books without on-disk files
+- `POST /api/scan` — rescan `library_dir`
+- `POST /api/books/{id}/import` — attach file under library root
+- `GET /api/files/{id}/stream` — serve ebook (path confined to `library_dir`)
+
 ## Build
 
 ```bash
 cd media-books
+export GOCACHE=/tmp/gocache-media-books
 go test ./...
 ```

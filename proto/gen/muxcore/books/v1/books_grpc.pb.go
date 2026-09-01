@@ -19,26 +19,42 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	BookManagementService_AddAuthor_FullMethodName    = "/muxcore.books.v1.BookManagementService/AddAuthor"
-	BookManagementService_GetAuthor_FullMethodName    = "/muxcore.books.v1.BookManagementService/GetAuthor"
-	BookManagementService_ListAuthors_FullMethodName  = "/muxcore.books.v1.BookManagementService/ListAuthors"
-	BookManagementService_RemoveAuthor_FullMethodName = "/muxcore.books.v1.BookManagementService/RemoveAuthor"
-	BookManagementService_AddBook_FullMethodName      = "/muxcore.books.v1.BookManagementService/AddBook"
-	BookManagementService_ListBooks_FullMethodName    = "/muxcore.books.v1.BookManagementService/ListBooks"
+	BookManagementService_AddAuthor_FullMethodName      = "/muxcore.books.v1.BookManagementService/AddAuthor"
+	BookManagementService_GetAuthor_FullMethodName      = "/muxcore.books.v1.BookManagementService/GetAuthor"
+	BookManagementService_ListAuthors_FullMethodName    = "/muxcore.books.v1.BookManagementService/ListAuthors"
+	BookManagementService_UpdateAuthor_FullMethodName   = "/muxcore.books.v1.BookManagementService/UpdateAuthor"
+	BookManagementService_RemoveAuthor_FullMethodName   = "/muxcore.books.v1.BookManagementService/RemoveAuthor"
+	BookManagementService_AddBook_FullMethodName        = "/muxcore.books.v1.BookManagementService/AddBook"
+	BookManagementService_GetBook_FullMethodName        = "/muxcore.books.v1.BookManagementService/GetBook"
+	BookManagementService_ListBooks_FullMethodName      = "/muxcore.books.v1.BookManagementService/ListBooks"
+	BookManagementService_UpdateBook_FullMethodName     = "/muxcore.books.v1.BookManagementService/UpdateBook"
+	BookManagementService_RemoveBook_FullMethodName     = "/muxcore.books.v1.BookManagementService/RemoveBook"
+	BookManagementService_ScanLibrary_FullMethodName    = "/muxcore.books.v1.BookManagementService/ScanLibrary"
+	BookManagementService_ListBookFiles_FullMethodName  = "/muxcore.books.v1.BookManagementService/ListBookFiles"
+	BookManagementService_ListMissing_FullMethodName    = "/muxcore.books.v1.BookManagementService/ListMissing"
+	BookManagementService_ImportBookFile_FullMethodName = "/muxcore.books.v1.BookManagementService/ImportBookFile"
 )
 
 // BookManagementServiceClient is the client API for BookManagementService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// BookManagementService is a Readarr-class book library manager (scaffold).
+// BookManagementService is a Readarr-class book library manager.
 type BookManagementServiceClient interface {
 	AddAuthor(ctx context.Context, in *AddAuthorRequest, opts ...grpc.CallOption) (*AddAuthorResponse, error)
 	GetAuthor(ctx context.Context, in *GetAuthorRequest, opts ...grpc.CallOption) (*GetAuthorResponse, error)
 	ListAuthors(ctx context.Context, in *ListAuthorsRequest, opts ...grpc.CallOption) (*ListAuthorsResponse, error)
+	UpdateAuthor(ctx context.Context, in *UpdateAuthorRequest, opts ...grpc.CallOption) (*UpdateAuthorResponse, error)
 	RemoveAuthor(ctx context.Context, in *RemoveAuthorRequest, opts ...grpc.CallOption) (*RemoveAuthorResponse, error)
 	AddBook(ctx context.Context, in *AddBookRequest, opts ...grpc.CallOption) (*AddBookResponse, error)
+	GetBook(ctx context.Context, in *GetBookRequest, opts ...grpc.CallOption) (*GetBookResponse, error)
 	ListBooks(ctx context.Context, in *ListBooksRequest, opts ...grpc.CallOption) (*ListBooksResponse, error)
+	UpdateBook(ctx context.Context, in *UpdateBookRequest, opts ...grpc.CallOption) (*UpdateBookResponse, error)
+	RemoveBook(ctx context.Context, in *RemoveBookRequest, opts ...grpc.CallOption) (*RemoveBookResponse, error)
+	ScanLibrary(ctx context.Context, in *ScanLibraryRequest, opts ...grpc.CallOption) (*ScanLibraryResponse, error)
+	ListBookFiles(ctx context.Context, in *ListBookFilesRequest, opts ...grpc.CallOption) (*ListBookFilesResponse, error)
+	ListMissing(ctx context.Context, in *ListMissingRequest, opts ...grpc.CallOption) (*ListMissingResponse, error)
+	ImportBookFile(ctx context.Context, in *ImportBookFileRequest, opts ...grpc.CallOption) (*ImportBookFileResponse, error)
 }
 
 type bookManagementServiceClient struct {
@@ -79,6 +95,16 @@ func (c *bookManagementServiceClient) ListAuthors(ctx context.Context, in *ListA
 	return out, nil
 }
 
+func (c *bookManagementServiceClient) UpdateAuthor(ctx context.Context, in *UpdateAuthorRequest, opts ...grpc.CallOption) (*UpdateAuthorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateAuthorResponse)
+	err := c.cc.Invoke(ctx, BookManagementService_UpdateAuthor_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *bookManagementServiceClient) RemoveAuthor(ctx context.Context, in *RemoveAuthorRequest, opts ...grpc.CallOption) (*RemoveAuthorResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RemoveAuthorResponse)
@@ -99,6 +125,16 @@ func (c *bookManagementServiceClient) AddBook(ctx context.Context, in *AddBookRe
 	return out, nil
 }
 
+func (c *bookManagementServiceClient) GetBook(ctx context.Context, in *GetBookRequest, opts ...grpc.CallOption) (*GetBookResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetBookResponse)
+	err := c.cc.Invoke(ctx, BookManagementService_GetBook_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *bookManagementServiceClient) ListBooks(ctx context.Context, in *ListBooksRequest, opts ...grpc.CallOption) (*ListBooksResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListBooksResponse)
@@ -109,18 +145,86 @@ func (c *bookManagementServiceClient) ListBooks(ctx context.Context, in *ListBoo
 	return out, nil
 }
 
+func (c *bookManagementServiceClient) UpdateBook(ctx context.Context, in *UpdateBookRequest, opts ...grpc.CallOption) (*UpdateBookResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateBookResponse)
+	err := c.cc.Invoke(ctx, BookManagementService_UpdateBook_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bookManagementServiceClient) RemoveBook(ctx context.Context, in *RemoveBookRequest, opts ...grpc.CallOption) (*RemoveBookResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemoveBookResponse)
+	err := c.cc.Invoke(ctx, BookManagementService_RemoveBook_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bookManagementServiceClient) ScanLibrary(ctx context.Context, in *ScanLibraryRequest, opts ...grpc.CallOption) (*ScanLibraryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ScanLibraryResponse)
+	err := c.cc.Invoke(ctx, BookManagementService_ScanLibrary_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bookManagementServiceClient) ListBookFiles(ctx context.Context, in *ListBookFilesRequest, opts ...grpc.CallOption) (*ListBookFilesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListBookFilesResponse)
+	err := c.cc.Invoke(ctx, BookManagementService_ListBookFiles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bookManagementServiceClient) ListMissing(ctx context.Context, in *ListMissingRequest, opts ...grpc.CallOption) (*ListMissingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMissingResponse)
+	err := c.cc.Invoke(ctx, BookManagementService_ListMissing_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bookManagementServiceClient) ImportBookFile(ctx context.Context, in *ImportBookFileRequest, opts ...grpc.CallOption) (*ImportBookFileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImportBookFileResponse)
+	err := c.cc.Invoke(ctx, BookManagementService_ImportBookFile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BookManagementServiceServer is the server API for BookManagementService service.
 // All implementations must embed UnimplementedBookManagementServiceServer
 // for forward compatibility.
 //
-// BookManagementService is a Readarr-class book library manager (scaffold).
+// BookManagementService is a Readarr-class book library manager.
 type BookManagementServiceServer interface {
 	AddAuthor(context.Context, *AddAuthorRequest) (*AddAuthorResponse, error)
 	GetAuthor(context.Context, *GetAuthorRequest) (*GetAuthorResponse, error)
 	ListAuthors(context.Context, *ListAuthorsRequest) (*ListAuthorsResponse, error)
+	UpdateAuthor(context.Context, *UpdateAuthorRequest) (*UpdateAuthorResponse, error)
 	RemoveAuthor(context.Context, *RemoveAuthorRequest) (*RemoveAuthorResponse, error)
 	AddBook(context.Context, *AddBookRequest) (*AddBookResponse, error)
+	GetBook(context.Context, *GetBookRequest) (*GetBookResponse, error)
 	ListBooks(context.Context, *ListBooksRequest) (*ListBooksResponse, error)
+	UpdateBook(context.Context, *UpdateBookRequest) (*UpdateBookResponse, error)
+	RemoveBook(context.Context, *RemoveBookRequest) (*RemoveBookResponse, error)
+	ScanLibrary(context.Context, *ScanLibraryRequest) (*ScanLibraryResponse, error)
+	ListBookFiles(context.Context, *ListBookFilesRequest) (*ListBookFilesResponse, error)
+	ListMissing(context.Context, *ListMissingRequest) (*ListMissingResponse, error)
+	ImportBookFile(context.Context, *ImportBookFileRequest) (*ImportBookFileResponse, error)
 	mustEmbedUnimplementedBookManagementServiceServer()
 }
 
@@ -140,14 +244,38 @@ func (UnimplementedBookManagementServiceServer) GetAuthor(context.Context, *GetA
 func (UnimplementedBookManagementServiceServer) ListAuthors(context.Context, *ListAuthorsRequest) (*ListAuthorsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListAuthors not implemented")
 }
+func (UnimplementedBookManagementServiceServer) UpdateAuthor(context.Context, *UpdateAuthorRequest) (*UpdateAuthorResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateAuthor not implemented")
+}
 func (UnimplementedBookManagementServiceServer) RemoveAuthor(context.Context, *RemoveAuthorRequest) (*RemoveAuthorResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RemoveAuthor not implemented")
 }
 func (UnimplementedBookManagementServiceServer) AddBook(context.Context, *AddBookRequest) (*AddBookResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AddBook not implemented")
 }
+func (UnimplementedBookManagementServiceServer) GetBook(context.Context, *GetBookRequest) (*GetBookResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetBook not implemented")
+}
 func (UnimplementedBookManagementServiceServer) ListBooks(context.Context, *ListBooksRequest) (*ListBooksResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListBooks not implemented")
+}
+func (UnimplementedBookManagementServiceServer) UpdateBook(context.Context, *UpdateBookRequest) (*UpdateBookResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateBook not implemented")
+}
+func (UnimplementedBookManagementServiceServer) RemoveBook(context.Context, *RemoveBookRequest) (*RemoveBookResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveBook not implemented")
+}
+func (UnimplementedBookManagementServiceServer) ScanLibrary(context.Context, *ScanLibraryRequest) (*ScanLibraryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ScanLibrary not implemented")
+}
+func (UnimplementedBookManagementServiceServer) ListBookFiles(context.Context, *ListBookFilesRequest) (*ListBookFilesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListBookFiles not implemented")
+}
+func (UnimplementedBookManagementServiceServer) ListMissing(context.Context, *ListMissingRequest) (*ListMissingResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMissing not implemented")
+}
+func (UnimplementedBookManagementServiceServer) ImportBookFile(context.Context, *ImportBookFileRequest) (*ImportBookFileResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImportBookFile not implemented")
 }
 func (UnimplementedBookManagementServiceServer) mustEmbedUnimplementedBookManagementServiceServer() {}
 func (UnimplementedBookManagementServiceServer) testEmbeddedByValue()                               {}
@@ -224,6 +352,24 @@ func _BookManagementService_ListAuthors_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BookManagementService_UpdateAuthor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateAuthorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BookManagementServiceServer).UpdateAuthor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BookManagementService_UpdateAuthor_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BookManagementServiceServer).UpdateAuthor(ctx, req.(*UpdateAuthorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _BookManagementService_RemoveAuthor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RemoveAuthorRequest)
 	if err := dec(in); err != nil {
@@ -260,6 +406,24 @@ func _BookManagementService_AddBook_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BookManagementService_GetBook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBookRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BookManagementServiceServer).GetBook(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BookManagementService_GetBook_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BookManagementServiceServer).GetBook(ctx, req.(*GetBookRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _BookManagementService_ListBooks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListBooksRequest)
 	if err := dec(in); err != nil {
@@ -274,6 +438,114 @@ func _BookManagementService_ListBooks_Handler(srv interface{}, ctx context.Conte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BookManagementServiceServer).ListBooks(ctx, req.(*ListBooksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BookManagementService_UpdateBook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateBookRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BookManagementServiceServer).UpdateBook(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BookManagementService_UpdateBook_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BookManagementServiceServer).UpdateBook(ctx, req.(*UpdateBookRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BookManagementService_RemoveBook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveBookRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BookManagementServiceServer).RemoveBook(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BookManagementService_RemoveBook_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BookManagementServiceServer).RemoveBook(ctx, req.(*RemoveBookRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BookManagementService_ScanLibrary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ScanLibraryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BookManagementServiceServer).ScanLibrary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BookManagementService_ScanLibrary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BookManagementServiceServer).ScanLibrary(ctx, req.(*ScanLibraryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BookManagementService_ListBookFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBookFilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BookManagementServiceServer).ListBookFiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BookManagementService_ListBookFiles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BookManagementServiceServer).ListBookFiles(ctx, req.(*ListBookFilesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BookManagementService_ListMissing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMissingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BookManagementServiceServer).ListMissing(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BookManagementService_ListMissing_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BookManagementServiceServer).ListMissing(ctx, req.(*ListMissingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BookManagementService_ImportBookFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportBookFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BookManagementServiceServer).ImportBookFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BookManagementService_ImportBookFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BookManagementServiceServer).ImportBookFile(ctx, req.(*ImportBookFileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -298,6 +570,10 @@ var BookManagementService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _BookManagementService_ListAuthors_Handler,
 		},
 		{
+			MethodName: "UpdateAuthor",
+			Handler:    _BookManagementService_UpdateAuthor_Handler,
+		},
+		{
 			MethodName: "RemoveAuthor",
 			Handler:    _BookManagementService_RemoveAuthor_Handler,
 		},
@@ -306,8 +582,36 @@ var BookManagementService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _BookManagementService_AddBook_Handler,
 		},
 		{
+			MethodName: "GetBook",
+			Handler:    _BookManagementService_GetBook_Handler,
+		},
+		{
 			MethodName: "ListBooks",
 			Handler:    _BookManagementService_ListBooks_Handler,
+		},
+		{
+			MethodName: "UpdateBook",
+			Handler:    _BookManagementService_UpdateBook_Handler,
+		},
+		{
+			MethodName: "RemoveBook",
+			Handler:    _BookManagementService_RemoveBook_Handler,
+		},
+		{
+			MethodName: "ScanLibrary",
+			Handler:    _BookManagementService_ScanLibrary_Handler,
+		},
+		{
+			MethodName: "ListBookFiles",
+			Handler:    _BookManagementService_ListBookFiles_Handler,
+		},
+		{
+			MethodName: "ListMissing",
+			Handler:    _BookManagementService_ListMissing_Handler,
+		},
+		{
+			MethodName: "ImportBookFile",
+			Handler:    _BookManagementService_ImportBookFile_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -75,6 +75,48 @@ func TestScanLibraryRootFixtures(t *testing.T) {
 	}
 }
 
+func TestScanLibraryRootPurgesVanishedFiles(t *testing.T) {
+	s, _ := openTempStore(t)
+	ctx := t.Context()
+	root := t.TempDir()
+	authorDir := filepath.Join(root, "Author", "Book")
+	if err := os.MkdirAll(authorDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	stub := filepath.Join(authorDir, "gone.epub")
+	if err := os.WriteFile(stub, []byte("stub"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.ScanLibraryRoot(ctx, root); err != nil {
+		t.Fatal(err)
+	}
+	books, err := s.ListBooks(ctx, "")
+	if err != nil || len(books) != 1 {
+		t.Fatalf("books=%d err=%v", len(books), err)
+	}
+	files, err := s.ListBookFiles(ctx, books[0].ID)
+	if err != nil || len(files) != 1 {
+		t.Fatalf("files=%d err=%v", len(files), err)
+	}
+	if err := os.Remove(stub); err != nil {
+		t.Fatal(err)
+	}
+	res, err := s.ScanLibraryRoot(ctx, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.FilesRemoved != 1 {
+		t.Fatalf("expected purge, got %+v", res)
+	}
+	items, total, err := s.ListMissingBooks(ctx, 1, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if total != 1 || len(items) != 1 {
+		t.Fatalf("expected missing after purge: total=%d items=%d", total, len(items))
+	}
+}
+
 func TestScanLibraryRootMissing(t *testing.T) {
 	s, _ := openTempStore(t)
 	_, err := s.ScanLibraryRoot(t.Context(), filepath.Join(t.TempDir(), "does-not-exist"))

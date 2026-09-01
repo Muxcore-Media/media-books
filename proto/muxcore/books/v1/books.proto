@@ -4,14 +4,22 @@ package muxcore.books.v1;
 
 option go_package = "github.com/Muxcore-Media/media-books/proto/gen/muxcore/books/v1;booksv1";
 
-// BookManagementService is a Readarr-class book library manager (scaffold).
+// BookManagementService is a Readarr-class book library manager.
 service BookManagementService {
   rpc AddAuthor(AddAuthorRequest) returns (AddAuthorResponse);
   rpc GetAuthor(GetAuthorRequest) returns (GetAuthorResponse);
   rpc ListAuthors(ListAuthorsRequest) returns (ListAuthorsResponse);
+  rpc UpdateAuthor(UpdateAuthorRequest) returns (UpdateAuthorResponse);
   rpc RemoveAuthor(RemoveAuthorRequest) returns (RemoveAuthorResponse);
   rpc AddBook(AddBookRequest) returns (AddBookResponse);
+  rpc GetBook(GetBookRequest) returns (GetBookResponse);
   rpc ListBooks(ListBooksRequest) returns (ListBooksResponse);
+  rpc UpdateBook(UpdateBookRequest) returns (UpdateBookResponse);
+  rpc RemoveBook(RemoveBookRequest) returns (RemoveBookResponse);
+  rpc ScanLibrary(ScanLibraryRequest) returns (ScanLibraryResponse);
+  rpc ListBookFiles(ListBookFilesRequest) returns (ListBookFilesResponse);
+  rpc ListMissing(ListMissingRequest) returns (ListMissingResponse);
+  rpc ImportBookFile(ImportBookFileRequest) returns (ImportBookFileResponse);
 }
 
 message Author {
@@ -22,6 +30,12 @@ message Author {
   string path = 5;
 }
 
+message BookFile {
+  string id = 1;
+  string title = 2;
+  string path = 3;
+}
+
 message Book {
   string id = 1;
   string author_id = 2;
@@ -29,6 +43,7 @@ message Book {
   string isbn = 4;
   int32 year = 5;
   bool monitored = 6;
+  repeated BookFile files = 7;
 }
 
 message AddAuthorRequest {
@@ -42,6 +57,14 @@ message GetAuthorRequest { string id = 1; }
 message GetAuthorResponse { Author author = 1; }
 message ListAuthorsRequest { string query = 1; }
 message ListAuthorsResponse { repeated Author authors = 1; }
+message UpdateAuthorRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string goodreads_id = 3;
+  optional bool monitored = 4;
+  optional string path = 5;
+}
+message UpdateAuthorResponse { Author author = 1; }
 message RemoveAuthorRequest { string id = 1; bool delete_files = 2; }
 message RemoveAuthorResponse { bool success = 1; }
 
@@ -53,5 +76,53 @@ message AddBookRequest {
   bool monitored = 5;
 }
 message AddBookResponse { Book book = 1; }
+message GetBookRequest { string id = 1; }
+message GetBookResponse { Book book = 1; }
 message ListBooksRequest { string author_id = 1; }
 message ListBooksResponse { repeated Book books = 1; }
+message UpdateBookRequest {
+  string id = 1;
+  optional string title = 2;
+  optional string isbn = 3;
+  optional int32 year = 4;
+  optional bool monitored = 5;
+}
+message UpdateBookResponse { Book book = 1; }
+message RemoveBookRequest { string id = 1; bool delete_files = 2; }
+message RemoveBookResponse { bool success = 1; }
+
+message ScanLibraryRequest {}
+message ScanLibraryResponse {
+  int32 files_found = 1;
+  int32 files_imported = 2;
+  int32 files_skipped = 3;
+  int32 files_removed = 4;
+}
+
+message ListBookFilesRequest { string book_id = 1; }
+message ListBookFilesResponse { repeated BookFile files = 1; }
+
+message ListMissingRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string author_id = 3;
+}
+message MissingBookItem {
+  string book_id = 1;
+  string author_id = 2;
+  string title = 3;
+  string author_name = 4;
+  int32 year = 5;
+}
+message ListMissingResponse {
+  repeated MissingBookItem items = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ImportBookFileRequest {
+  string book_id = 1;
+  string path = 2;
+}
+message ImportBookFileResponse { BookFile file = 1; }

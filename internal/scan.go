@@ -25,6 +25,7 @@ type ScanResult struct {
 	FilesFound    int
 	FilesImported int
 	FilesSkipped  int
+	FilesRemoved  int
 }
 
 // ScanLibraryRoot walks root for ebook files and upserts authors/books/files.
@@ -43,7 +44,11 @@ func (s *Store) ScanLibraryRoot(ctx context.Context, root string) (*ScanResult, 
 		return nil, fmt.Errorf("library root is not a directory: %s", root)
 	}
 
-	res := &ScanResult{}
+	removed, err := s.PurgeMissingBookFiles(ctx)
+	if err != nil {
+		return nil, err
+	}
+	res := &ScanResult{FilesRemoved: removed}
 	err = filepath.WalkDir(root, func(path string, d fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
