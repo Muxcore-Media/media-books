@@ -11,8 +11,14 @@ import (
 
 func (m *Module) registerBooksHTTPAPI(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/authors", m.handleListAuthorsHTTP)
+	mux.HandleFunc("POST /api/authors", m.handleAddAuthorHTTP)
 	mux.HandleFunc("GET /api/authors/{id}", m.handleGetAuthorHTTP)
+	mux.HandleFunc("POST /api/authors/{id}/books", m.handleAddBookHTTP)
+	mux.HandleFunc("PATCH /api/authors/{id}", m.handlePatchAuthorHTTP)
+	mux.HandleFunc("DELETE /api/authors/{id}", m.handleDeleteAuthorHTTP)
 	mux.HandleFunc("GET /api/books", m.handleListBooksHTTP)
+	mux.HandleFunc("PATCH /api/books/{id}", m.handlePatchBookHTTP)
+	mux.HandleFunc("DELETE /api/books/{id}", m.handleDeleteBookHTTP)
 	mux.HandleFunc("GET /api/missing", m.handleListMissingHTTP)
 	mux.HandleFunc("POST /api/scan", m.handleScanHTTP)
 	mux.HandleFunc("POST /api/books/{id}/import", m.handleImportBookHTTP)
@@ -34,6 +40,40 @@ func (m *Module) handleListAuthorsHTTP(w http.ResponseWriter, r *http.Request) {
 		out = append(out, toAuthorJSON(a))
 	}
 	writeJSON(w, out)
+}
+
+func (m *Module) handleAddAuthorHTTP(w http.ResponseWriter, r *http.Request) {
+	if m.store == nil {
+		http.Error(w, `{"error":"store not open"}`, http.StatusServiceUnavailable)
+		return
+	}
+	var body struct {
+		Name      string `json:"name"`
+		Monitored *bool  `json:"monitored"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, `{"error":"invalid json body"}`, http.StatusBadRequest)
+		return
+	}
+	name := strings.TrimSpace(body.Name)
+	if name == "" {
+		http.Error(w, `{"error":"name required"}`, http.StatusBadRequest)
+		return
+	}
+	monitored := true
+	if body.Monitored != nil {
+		monitored = *body.Monitored
+	}
+	a, err := m.store.AddAuthor(r.Context(), Author{Name: name, Monitored: monitored})
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "required") {
+			status = http.StatusBadRequest
+		}
+		http.Error(w, fmtJSONError(err), status)
+		return
+	}
+	writeJSON(w, toAuthorJSON(a))
 }
 
 func (m *Module) handleGetAuthorHTTP(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +105,128 @@ func (m *Module) handleGetAuthorHTTP(w http.ResponseWriter, r *http.Request) {
 		detail.Books = append(detail.Books, m.bookJSONWithFiles(r.Context(), b))
 	}
 	writeJSON(w, detail)
+}
+
+func (m *Module) handlePatchAuthorHTTP(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" || m.store == nil {
+		http.Error(w, `{"error":"id required"}`, http.StatusBadRequest)
+		return
+	}
+	mon, ok := readMonitoredJSON(w, r)
+	if !ok {
+		return
+	}
+	a, err := m.store.UpdateAuthor(r.Context(), id, map[string]any{"monitored": mon})
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "not found") {
+			status = http.StatusNotFound
+		}
+		http.Error(w, fmtJSONError(err), status)
+		return
+	}
+	writeJSON(w, toAuthorJSON(a))
+}
+
+func (m *Module) handleAddBookHTTP(w http.ResponseWriter, r *http.Request) {
+	authorID := strings.TrimSpace(r.PathValue("id"))
+	if authorID == "" || m.store == nil {
+		http.Error(w, `{"error":"id required"}`, http.StatusBadRequest)
+		return
+	}
+	var body struct {
+		Title     string `json:"title"`
+		ISBN      string `json:"isbn"`
+		Year      int32  `json:"year"`
+		Monitored *bool  `json:"monitored"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, `{"error":"invalid json body"}`, http.StatusBadRequest)
+		return
+	}
+	title := strings.TrimSpace(body.Title)
+	if title == "" {
+		http.Error(w, `{"error":"title required"}`, http.StatusBadRequest)
+		return
+	}
+	monitored := true
+	if body.Monitored != nil {
+		monitored = *body.Monitored
+	}
+	b, err := m.store.AddBook(r.Context(), Book{
+		AuthorID: authorID, Title: title, ISBN: strings.TrimSpace(body.ISBN),
+		Year: body.Year, Monitored: monitored,
+	})
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "not found") {
+			status = http.StatusNotFound
+		} else if strings.Contains(err.Error(), "required") {
+			status = http.StatusBadRequest
+		}
+		http.Error(w, fmtJSONError(err), status)
+		return
+	}
+	writeJSON(w, m.bookJSONWithFiles(r.Context(), b))
+}
+
+func (m *Module) handlePatchBookHTTP(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" || m.store == nil {
+		http.Error(w, `{"error":"id required"}`, http.StatusBadRequest)
+		return
+	}
+	mon, ok := readMonitoredJSON(w, r)
+	if !ok {
+		return
+	}
+	b, err := m.store.UpdateBook(r.Context(), id, map[string]any{"monitored": mon})
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "not found") {
+			status = http.StatusNotFound
+		}
+		http.Error(w, fmtJSONError(err), status)
+		return
+	}
+	writeJSON(w, m.bookJSONWithFiles(r.Context(), b))
+}
+
+func (m *Module) handleDeleteAuthorHTTP(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" || m.store == nil {
+		http.Error(w, `{"error":"id required"}`, http.StatusBadRequest)
+		return
+	}
+	deleteFiles := queryDeleteFiles(r)
+	if err := m.store.RemoveAuthorFiles(r.Context(), id, m.libraryRoot(), deleteFiles); err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "not found") {
+			status = http.StatusNotFound
+		}
+		http.Error(w, fmtJSONError(err), status)
+		return
+	}
+	writeJSON(w, map[string]any{"removed": true, "delete_files": deleteFiles})
+}
+
+func (m *Module) handleDeleteBookHTTP(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" || m.store == nil {
+		http.Error(w, `{"error":"id required"}`, http.StatusBadRequest)
+		return
+	}
+	deleteFiles := queryDeleteFiles(r)
+	if err := m.store.RemoveBookFiles(r.Context(), id, m.libraryRoot(), deleteFiles); err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "not found") {
+			status = http.StatusNotFound
+		}
+		http.Error(w, fmtJSONError(err), status)
+		return
+	}
+	writeJSON(w, map[string]any{"removed": true, "delete_files": deleteFiles})
 }
 
 func (m *Module) handleListBooksHTTP(w http.ResponseWriter, r *http.Request) {
@@ -253,6 +415,22 @@ func (m *Module) bookJSONWithFiles(ctx context.Context, b *Book) bookJSON {
 		})
 	}
 	return out
+}
+
+func queryDeleteFiles(r *http.Request) bool {
+	raw := strings.TrimSpace(r.URL.Query().Get("delete_files"))
+	return raw == "1" || strings.EqualFold(raw, "true") || strings.EqualFold(raw, "yes")
+}
+
+func readMonitoredJSON(w http.ResponseWriter, r *http.Request) (bool, bool) {
+	var body struct {
+		Monitored *bool `json:"monitored"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Monitored == nil {
+		http.Error(w, `{"error":"monitored is required"}`, http.StatusBadRequest)
+		return false, false
+	}
+	return *body.Monitored, true
 }
 
 func writeJSON(w http.ResponseWriter, v any) {

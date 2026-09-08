@@ -172,6 +172,141 @@ func TestHTTPAuthorDetailAndStream(t *testing.T) {
 	}
 }
 
+func TestHTTPPatchAuthorAndBookMonitored(t *testing.T) {
+	m := startTestModule(t)
+	base := "http://" + m.HTTPListenAddr()
+
+	listResp, err := http.Get(base + "/api/books")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = listResp.Body.Close() }()
+	var books []struct {
+		ID       string `json:"id"`
+		AuthorID string `json:"author_id"`
+	}
+	if err := json.NewDecoder(listResp.Body).Decode(&books); err != nil {
+		t.Fatal(err)
+	}
+	if len(books) == 0 {
+		t.Fatal("expected books")
+	}
+
+	authorReq, err := http.NewRequest(http.MethodPatch, base+"/api/authors/"+books[0].AuthorID, bytes.NewBufferString(`{"monitored":false}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	authorResp, err := http.DefaultClient.Do(authorReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = authorResp.Body.Close() }()
+	if authorResp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(authorResp.Body)
+		t.Fatalf("author patch %d: %s", authorResp.StatusCode, b)
+	}
+	var author struct {
+		Monitored bool `json:"monitored"`
+	}
+	if err := json.NewDecoder(authorResp.Body).Decode(&author); err != nil {
+		t.Fatal(err)
+	}
+	if author.Monitored {
+		t.Fatal("expected author unmonitored")
+	}
+
+	bookReq, err := http.NewRequest(http.MethodPatch, base+"/api/books/"+books[0].ID, bytes.NewBufferString(`{"monitored":false}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	bookResp, err := http.DefaultClient.Do(bookReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = bookResp.Body.Close() }()
+	if bookResp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(bookResp.Body)
+		t.Fatalf("book patch %d: %s", bookResp.StatusCode, b)
+	}
+	var book struct {
+		Monitored bool `json:"monitored"`
+	}
+	if err := json.NewDecoder(bookResp.Body).Decode(&book); err != nil {
+		t.Fatal(err)
+	}
+	if book.Monitored {
+		t.Fatal("expected book unmonitored")
+	}
+}
+
+func TestHTTPDeleteAuthorAndBook(t *testing.T) {
+	m := startTestModule(t)
+	base := "http://" + m.HTTPListenAddr()
+
+	listResp, err := http.Get(base + "/api/books")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = listResp.Body.Close() }()
+	var books []struct {
+		ID       string `json:"id"`
+		AuthorID string `json:"author_id"`
+	}
+	if err := json.NewDecoder(listResp.Body).Decode(&books); err != nil {
+		t.Fatal(err)
+	}
+	if len(books) == 0 {
+		t.Fatal("expected books")
+	}
+
+	bookReq, err := http.NewRequest(http.MethodDelete, base+"/api/books/"+books[0].ID, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bookResp, err := http.DefaultClient.Do(bookReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = bookResp.Body.Close() }()
+	if bookResp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(bookResp.Body)
+		t.Fatalf("book delete %d: %s", bookResp.StatusCode, b)
+	}
+
+	authorReq, err := http.NewRequest(http.MethodDelete, base+"/api/authors/"+books[0].AuthorID+"?delete_files=1", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	authorResp, err := http.DefaultClient.Do(authorReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = authorResp.Body.Close() }()
+	if authorResp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(authorResp.Body)
+		t.Fatalf("author delete %d: %s", authorResp.StatusCode, b)
+	}
+	var body struct {
+		Removed     bool `json:"removed"`
+		DeleteFiles bool `json:"delete_files"`
+	}
+	if err := json.NewDecoder(authorResp.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if !body.Removed || !body.DeleteFiles {
+		t.Fatalf("unexpected author delete: %+v", body)
+	}
+
+	missing, err := http.Get(base + "/api/authors/" + books[0].AuthorID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = missing.Body.Close() }()
+	if missing.StatusCode != http.StatusNotFound {
+		t.Fatalf("expected author 404, got %d", missing.StatusCode)
+	}
+}
+
 func TestHTTPStreamUnknownID404(t *testing.T) {
 	m := startTestModule(t)
 	resp, err := http.Get("http://" + m.HTTPListenAddr() + "/api/files/bf_nope/stream")
@@ -278,5 +413,72 @@ func TestHTTPImportBookFile(t *testing.T) {
 	}
 	if imported.ID == "" || !strings.HasSuffix(imported.StreamURL, "/stream") {
 		t.Fatalf("import: %+v", imported)
+	}
+}
+
+func TestHTTPAddBook(t *testing.T) {
+	m := startTestModule(t)
+	base := "http://" + m.HTTPListenAddr()
+
+	listResp, err := http.Get(base + "/api/authors")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = listResp.Body.Close() }()
+	var authors []struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(listResp.Body).Decode(&authors); err != nil {
+		t.Fatal(err)
+	}
+	if len(authors) == 0 {
+		t.Fatal("expected authors")
+	}
+
+	body, _ := json.Marshal(map[string]any{"title": "The Dispossessed", "year": 1974})
+	resp, err := http.Post(base+"/api/authors/"+authors[0].ID+"/books", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("add book %d: %s", resp.StatusCode, b)
+	}
+	var added struct {
+		ID       string `json:"id"`
+		AuthorID string `json:"author_id"`
+		Title    string `json:"title"`
+		Year     int32  `json:"year"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&added); err != nil {
+		t.Fatal(err)
+	}
+	if added.ID == "" || added.AuthorID != authors[0].ID || added.Title != "The Dispossessed" || added.Year != 1974 {
+		t.Fatalf("added: %+v", added)
+	}
+}
+
+func TestHTTPAddAuthor(t *testing.T) {
+	m := startTestModule(t)
+	body, _ := json.Marshal(map[string]any{"name": "Octavia E. Butler"})
+	resp, err := http.Post("http://"+m.HTTPListenAddr()+"/api/authors", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("add author %d: %s", resp.StatusCode, b)
+	}
+	var added struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&added); err != nil {
+		t.Fatal(err)
+	}
+	if added.ID == "" || added.Name != "Octavia E. Butler" {
+		t.Fatalf("added: %+v", added)
 	}
 }
