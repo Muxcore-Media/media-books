@@ -237,6 +237,33 @@ func TestHTTPPatchAuthorAndBookMonitored(t *testing.T) {
 	if book.Monitored {
 		t.Fatal("expected book unmonitored")
 	}
+
+	pathReq, err := http.NewRequest(http.MethodPatch, base+"/api/authors/"+books[0].AuthorID, bytes.NewBufferString(`{"path":"/data/books"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	pathResp, err := http.DefaultClient.Do(pathReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = pathResp.Body.Close() }()
+	if pathResp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(pathResp.Body)
+		t.Fatalf("author path patch %d: %s", pathResp.StatusCode, b)
+	}
+	var authorPath struct {
+		Path      string `json:"path"`
+		Monitored bool   `json:"monitored"`
+	}
+	if err := json.NewDecoder(pathResp.Body).Decode(&authorPath); err != nil {
+		t.Fatal(err)
+	}
+	if authorPath.Path != "/data/books" {
+		t.Fatalf("author path %q", authorPath.Path)
+	}
+	if authorPath.Monitored {
+		t.Fatal("path patch must keep the author unmonitored")
+	}
 }
 
 func TestHTTPDeleteAuthorAndBook(t *testing.T) {

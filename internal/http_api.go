@@ -113,11 +113,26 @@ func (m *Module) handlePatchAuthorHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"id required"}`, http.StatusBadRequest)
 		return
 	}
-	mon, ok := readMonitoredJSON(w, r)
-	if !ok {
+	var body struct {
+		Monitored *bool   `json:"monitored"`
+		Path      *string `json:"path"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, `{"error":"invalid json body"}`, http.StatusBadRequest)
 		return
 	}
-	a, err := m.store.UpdateAuthor(r.Context(), id, map[string]any{"monitored": mon})
+	fields := map[string]any{}
+	if body.Monitored != nil {
+		fields["monitored"] = *body.Monitored
+	}
+	if body.Path != nil {
+		fields["path"] = strings.TrimSpace(*body.Path)
+	}
+	if len(fields) == 0 {
+		http.Error(w, `{"error":"monitored or path is required"}`, http.StatusBadRequest)
+		return
+	}
+	a, err := m.store.UpdateAuthor(r.Context(), id, fields)
 	if err != nil {
 		status := http.StatusInternalServerError
 		if strings.Contains(err.Error(), "not found") {
