@@ -101,6 +101,16 @@ func (s *Store) migrate(ctx context.Context) error {
 		CREATE INDEX IF NOT EXISTS idx_books_author ON books(author_id);
 		CREATE INDEX IF NOT EXISTS idx_book_files_book ON book_files(book_id);
 		CREATE INDEX IF NOT EXISTS idx_book_files_path ON book_files(path);
+		CREATE TABLE IF NOT EXISTS history (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			item_id TEXT NOT NULL,
+			event_type TEXT NOT NULL,
+			source_title TEXT DEFAULT '',
+			quality TEXT DEFAULT '',
+			data TEXT DEFAULT '{}',
+			date TEXT NOT NULL
+		);
+		CREATE INDEX IF NOT EXISTS idx_history_item ON history(item_id);
 	`)
 	if err != nil {
 		return fmt.Errorf("migrate: %w", err)
@@ -144,6 +154,7 @@ func (s *Store) AddAuthor(ctx context.Context, a Author) (*Author, error) {
 		return nil, fmt.Errorf("insert author: %w", err)
 	}
 	out := a
+	s.appendHistory(ctx, a.ID, historyImport, a.Name, "")
 	return &out, nil
 }
 
@@ -183,6 +194,10 @@ func (s *Store) RemoveAuthor(ctx context.Context, id string) error {
 
 // RemoveAuthorFiles deletes an author and optionally unlinks ebook files under libraryRoot.
 func (s *Store) RemoveAuthorFiles(ctx context.Context, id, libraryRoot string, deleteFiles bool) error {
+	name := id
+	if au, err := s.GetAuthor(ctx, id); err == nil && au != nil {
+		name = au.Name
+	}
 	if deleteFiles && libraryRoot != "" {
 		files, err := s.ListBookFiles(ctx, "")
 		if err != nil {
@@ -208,6 +223,7 @@ func (s *Store) RemoveAuthorFiles(ctx context.Context, id, libraryRoot string, d
 	if n == 0 {
 		return fmt.Errorf("author %q not found", id)
 	}
+	s.appendHistory(ctx, id, historyDeleteItem, name, "")
 	return nil
 }
 
@@ -314,6 +330,10 @@ func (s *Store) RemoveBook(ctx context.Context, id string) error {
 
 // RemoveBookFiles deletes a book and optionally unlinks ebook files under libraryRoot.
 func (s *Store) RemoveBookFiles(ctx context.Context, id, libraryRoot string, deleteFiles bool) error {
+	title, authorID := id, ""
+	if bk, err := s.GetBook(ctx, id); err == nil && bk != nil {
+		title, authorID = bk.Title, bk.AuthorID
+	}
 	if deleteFiles && libraryRoot != "" {
 		files, err := s.ListBookFiles(ctx, id)
 		if err != nil {
@@ -335,6 +355,9 @@ func (s *Store) RemoveBookFiles(ctx context.Context, id, libraryRoot string, del
 	}
 	if n == 0 {
 		return fmt.Errorf("book %q not found", id)
+	}
+	if authorID != "" {
+		s.appendHistory(ctx, authorID, historyDeleteFile, title, "")
 	}
 	return nil
 }
@@ -368,12 +391,17 @@ func (s *Store) ImportBookFile(ctx context.Context, bookID, filePath, libraryRoo
 		return nil, err
 	}
 	title := strings.TrimSpace(strings.TrimSuffix(filepath.Base(abs), filepath.Ext(abs)))
-	return s.upsertBookFile(ctx, BookFile{
+	f, err := s.upsertBookFile(ctx, BookFile{
 		BookID:   bk.ID,
 		AuthorID: au.ID,
 		Title:    title,
 		Path:     abs,
 	})
+	if err != nil {
+		return nil, err
+	}
+	s.appendHistory(ctx, au.ID, historyImport, title, "")
+	return f, nil
 }
 
 func unlinkIfUnderRoot(path, root string) error {

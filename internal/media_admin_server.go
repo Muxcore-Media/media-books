@@ -51,8 +51,8 @@ func (s mediaAdminServer) SearchIndexers(_ context.Context, _ *mediaadminv1.Sear
 	return nil, status.Error(codes.Unimplemented, "indexer search not supported for books")
 }
 
-func (s mediaAdminServer) ListHistory(_ context.Context, _ *mediaadminv1.ListHistoryRequest) (*mediaadminv1.ListHistoryResponse, error) {
-	return &mediaadminv1.ListHistoryResponse{}, nil
+func (s mediaAdminServer) ListHistory(ctx context.Context, req *mediaadminv1.ListHistoryRequest) (*mediaadminv1.ListHistoryResponse, error) {
+	return s.m.ListHistory(ctx, req)
 }
 
 func (s mediaAdminServer) ListMissing(ctx context.Context, req *mediaadminv1.ListMissingRequest) (*mediaadminv1.ListMissingResponse, error) {
