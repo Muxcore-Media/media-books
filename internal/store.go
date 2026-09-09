@@ -18,6 +18,7 @@ type Author struct {
 	Name        string
 	GoodreadsID string
 	Path        string
+	PosterURL   string
 	Monitored   bool
 }
 
@@ -115,6 +116,9 @@ func (s *Store) migrate(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("migrate: %w", err)
 	}
+	if _, err := s.db.ExecContext(ctx, `ALTER TABLE authors ADD COLUMN poster_url TEXT NOT NULL DEFAULT ''`); err != nil && !strings.Contains(err.Error(), "duplicate column") {
+		return fmt.Errorf("migrate poster_url: %w", err)
+	}
 	return nil
 }
 
@@ -160,14 +164,14 @@ func (s *Store) AddAuthor(ctx context.Context, a Author) (*Author, error) {
 
 func (s *Store) GetAuthor(ctx context.Context, id string) (*Author, error) {
 	row := s.db.QueryRowContext(ctx, `
-		SELECT id, name, goodreads_id, monitored, path FROM authors WHERE id = ?
+		SELECT id, name, goodreads_id, monitored, path, poster_url FROM authors WHERE id = ?
 	`, id)
 	return scanAuthor(row)
 }
 
 func (s *Store) ListAuthors(ctx context.Context, query string) ([]*Author, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, name, goodreads_id, monitored, path FROM authors ORDER BY name
+		SELECT id, name, goodreads_id, monitored, path, poster_url FROM authors ORDER BY name
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("list authors: %w", err)
@@ -281,13 +285,16 @@ func (s *Store) UpdateAuthor(ctx context.Context, id string, fields map[string]a
 	if v, ok := fields["monitored"].(bool); ok {
 		a.Monitored = v
 	}
+	if v, ok := fields["poster_url"].(string); ok {
+		a.PosterURL = v
+	}
 	monitored := 0
 	if a.Monitored {
 		monitored = 1
 	}
 	_, err = s.db.ExecContext(ctx, `
-		UPDATE authors SET name = ?, goodreads_id = ?, monitored = ?, path = ? WHERE id = ?
-	`, a.Name, a.GoodreadsID, monitored, a.Path, id)
+		UPDATE authors SET name = ?, goodreads_id = ?, monitored = ?, path = ?, poster_url = ? WHERE id = ?
+	`, a.Name, a.GoodreadsID, monitored, a.Path, a.PosterURL, id)
 	if err != nil {
 		return nil, fmt.Errorf("update author: %w", err)
 	}
@@ -585,7 +592,7 @@ func (s *Store) PurgeMissingBookFiles(ctx context.Context) (int, error) {
 
 func (s *Store) findAuthorByName(ctx context.Context, name string) (*Author, error) {
 	row := s.db.QueryRowContext(ctx, `
-		SELECT id, name, goodreads_id, monitored, path FROM authors
+		SELECT id, name, goodreads_id, monitored, path, poster_url FROM authors
 		WHERE lower(name) = lower(?) LIMIT 1
 	`, name)
 	a, err := scanAuthor(row)
@@ -665,7 +672,7 @@ type rowScanner interface {
 func scanAuthor(row rowScanner) (*Author, error) {
 	var a Author
 	var monitored int
-	if err := row.Scan(&a.ID, &a.Name, &a.GoodreadsID, &monitored, &a.Path); err != nil {
+	if err := row.Scan(&a.ID, &a.Name, &a.GoodreadsID, &monitored, &a.Path, &a.PosterURL); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("author not found")
 		}
