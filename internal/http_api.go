@@ -13,6 +13,8 @@ func (m *Module) registerBooksHTTPAPI(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/authors", m.handleListAuthorsHTTP)
 	mux.HandleFunc("POST /api/authors", m.handleAddAuthorHTTP)
 	mux.HandleFunc("GET /api/authors/{id}", m.handleGetAuthorHTTP)
+	mux.HandleFunc("GET /api/authors/{id}/tags", m.handleGetAuthorTagsHTTP)
+	mux.HandleFunc("PUT /api/authors/{id}/tags", m.handleSetAuthorTagsHTTP)
 	mux.HandleFunc("POST /api/authors/{id}/books", m.handleAddBookHTTP)
 	mux.HandleFunc("PATCH /api/authors/{id}", m.handlePatchAuthorHTTP)
 	mux.HandleFunc("DELETE /api/authors/{id}", m.handleDeleteAuthorHTTP)
@@ -458,4 +460,54 @@ func writeJSON(w http.ResponseWriter, v any) {
 func fmtJSONError(err error) string {
 	b, _ := json.Marshal(map[string]string{"error": err.Error()})
 	return string(b)
+}
+
+func tagJSON(t *Tag) map[string]any {
+	return map[string]any{"id": t.ID, "label": t.Label, "created_at": t.CreatedAt, "media": "book"}
+}
+
+func (m *Module) handleGetAuthorTagsHTTP(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimSpace(r.PathValue("id"))
+	if id == "" || m.store == nil {
+		http.Error(w, `{"error":"id required"}`, http.StatusBadRequest)
+		return
+	}
+	if _, err := m.store.GetAuthor(r.Context(), id); err != nil {
+		http.Error(w, fmtJSONError(err), http.StatusNotFound)
+		return
+	}
+	tags, err := m.store.GetItemTags(r.Context(), id)
+	if err != nil {
+		http.Error(w, fmtJSONError(err), http.StatusInternalServerError)
+		return
+	}
+	out := make([]map[string]any, 0, len(tags))
+	for _, t := range tags {
+		out = append(out, tagJSON(t))
+	}
+	writeJSON(w, map[string]any{"available": true, "tags": out})
+}
+
+func (m *Module) handleSetAuthorTagsHTTP(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimSpace(r.PathValue("id"))
+	if id == "" || m.store == nil {
+		http.Error(w, `{"error":"id required"}`, http.StatusBadRequest)
+		return
+	}
+	if _, err := m.store.GetAuthor(r.Context(), id); err != nil {
+		http.Error(w, fmtJSONError(err), http.StatusNotFound)
+		return
+	}
+	var body struct {
+		TagIDs []string `json:"tag_ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, `{"error":"invalid json body"}`, http.StatusBadRequest)
+		return
+	}
+	if err := m.store.SetItemTags(r.Context(), id, body.TagIDs); err != nil {
+		http.Error(w, fmtJSONError(err), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, map[string]any{"ok": true, "id": id, "tag_ids": body.TagIDs})
 }

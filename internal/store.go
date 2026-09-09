@@ -22,6 +22,12 @@ type Author struct {
 	Monitored   bool
 }
 
+type Tag struct {
+	ID        string
+	Label     string
+	CreatedAt string
+}
+
 type Book struct {
 	ID        string
 	AuthorID  string
@@ -112,6 +118,16 @@ func (s *Store) migrate(ctx context.Context) error {
 			date TEXT NOT NULL
 		);
 		CREATE INDEX IF NOT EXISTS idx_history_item ON history(item_id);
+		CREATE TABLE IF NOT EXISTS tags (
+			id TEXT PRIMARY KEY,
+			label TEXT UNIQUE NOT NULL,
+			created_at TEXT NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS item_tags (
+			item_id TEXT NOT NULL,
+			tag_id TEXT NOT NULL,
+			PRIMARY KEY (item_id, tag_id)
+		);
 	`)
 	if err != nil {
 		return fmt.Errorf("migrate: %w", err)

@@ -75,20 +75,53 @@ func (s mediaAdminServer) ListMissing(ctx context.Context, req *mediaadminv1.Lis
 	}, nil
 }
 
-func (s mediaAdminServer) ListTags(_ context.Context, _ *mediaadminv1.ListTagsRequest) (*mediaadminv1.ListTagsResponse, error) {
-	return &mediaadminv1.ListTagsResponse{}, nil
+func (s mediaAdminServer) ListTags(ctx context.Context, _ *mediaadminv1.ListTagsRequest) (*mediaadminv1.ListTagsResponse, error) {
+	if s.m.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "store not open")
+	}
+	tags, err := s.m.store.ListTags(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*mediaadminv1.Tag, 0, len(tags))
+	for _, t := range tags {
+		out = append(out, &mediaadminv1.Tag{Id: t.ID, Label: t.Label, CreatedAt: t.CreatedAt})
+	}
+	return &mediaadminv1.ListTagsResponse{Tags: out}, nil
 }
 
-func (s mediaAdminServer) CreateTag(_ context.Context, _ *mediaadminv1.CreateTagRequest) (*mediaadminv1.CreateTagResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "tags not supported for books")
+func (s mediaAdminServer) CreateTag(ctx context.Context, req *mediaadminv1.CreateTagRequest) (*mediaadminv1.CreateTagResponse, error) {
+	if s.m.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "store not open")
+	}
+	id, err := s.m.store.CreateTag(ctx, req.GetLabel())
+	if err != nil {
+		return nil, err
+	}
+	return &mediaadminv1.CreateTagResponse{TagId: id}, nil
 }
 
-func (s mediaAdminServer) DeleteTag(_ context.Context, _ *mediaadminv1.DeleteTagRequest) (*mediaadminv1.DeleteTagResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "tags not supported for books")
+func (s mediaAdminServer) DeleteTag(ctx context.Context, req *mediaadminv1.DeleteTagRequest) (*mediaadminv1.DeleteTagResponse, error) {
+	if s.m.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "store not open")
+	}
+	if err := s.m.store.DeleteTag(ctx, req.GetTagId()); err != nil {
+		return nil, err
+	}
+	return &mediaadminv1.DeleteTagResponse{}, nil
 }
 
-func (s mediaAdminServer) SetItemTags(_ context.Context, _ *mediaadminv1.SetItemTagsRequest) (*mediaadminv1.SetItemTagsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "tags not supported for books")
+func (s mediaAdminServer) SetItemTags(ctx context.Context, req *mediaadminv1.SetItemTagsRequest) (*mediaadminv1.SetItemTagsResponse, error) {
+	if s.m.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "store not open")
+	}
+	if _, err := mustAuthor(ctx, s.m.store, req.GetItemId()); err != nil {
+		return nil, status.Errorf(codes.NotFound, "%v", err)
+	}
+	if err := s.m.store.SetItemTags(ctx, req.GetItemId(), req.GetTagIds()); err != nil {
+		return nil, err
+	}
+	return &mediaadminv1.SetItemTagsResponse{}, nil
 }
 
 func (s mediaAdminServer) ListCollections(_ context.Context, _ *mediaadminv1.ListCollectionsRequest) (*mediaadminv1.ListCollectionsResponse, error) {
