@@ -2,12 +2,24 @@ package internal
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/Muxcore-Media/core/sdk/go/module/pathguard"
 )
 
 func pathUnderRoot(path, root string) (string, error) {
+	return confineToRoot(path, root)
+}
+
+func validateLibraryPath(path, root string) (string, error) {
+	return confineToRoot(path, root)
+}
+
+// confineToRoot resolves path inside root with pathguard. Symlinks on the
+// nearest existing ancestor are followed, and a sibling prefix such as
+// /library2 is not inside /library.
+func confineToRoot(path, root string) (string, error) {
 	path = strings.TrimSpace(path)
 	root = strings.TrimSpace(root)
 	if path == "" {
@@ -20,36 +32,13 @@ func pathUnderRoot(path, root string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("resolve path: %w", err)
 	}
-	abs = filepath.Clean(abs)
 	rootAbs, err := filepath.Abs(root)
 	if err != nil {
 		return "", fmt.Errorf("resolve library root: %w", err)
 	}
-	rootAbs = filepath.Clean(rootAbs)
-	rel, err := filepath.Rel(rootAbs, abs)
+	resolved, err := pathguard.Confine(abs, []string{rootAbs})
 	if err != nil {
-		return "", fmt.Errorf("path outside library root")
-	}
-	if rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
-		return "", fmt.Errorf("path outside library root")
-	}
-	return abs, nil
-}
-
-func validateLibraryPath(path, root string) (string, error) {
-	abs, err := pathUnderRoot(path, root)
-	if err != nil {
-		return "", err
-	}
-	resolved, err := filepath.EvalSymlinks(abs)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return abs, nil
-		}
-		return "", fmt.Errorf("resolve symlinks: %w", err)
-	}
-	if _, err := pathUnderRoot(resolved, root); err != nil {
-		return "", fmt.Errorf("symlink target outside library root")
+		return "", fmt.Errorf("path outside library root: %w", err)
 	}
 	return resolved, nil
 }
