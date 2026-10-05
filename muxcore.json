@@ -1,7 +1,7 @@
 {
   "id": "media-books",
   "name": "Book Manager",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Readarr-class book library manager with SQLite persistence and admin UI integration",
   "roles": [
     "media",
