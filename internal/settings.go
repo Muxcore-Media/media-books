@@ -36,8 +36,8 @@ func (m *Module) UpdateSetting(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("library_dir: %w", err)
 		}
-		if err := os.MkdirAll(abs, 0o700); err != nil {
-			return fmt.Errorf("library_dir: %w", err)
+		if mkErr := os.MkdirAll(abs, 0o700); mkErr != nil {
+			return fmt.Errorf("library_dir: %w", mkErr)
 		}
 		info, err := os.Stat(abs)
 		if err != nil {

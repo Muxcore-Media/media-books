@@ -30,7 +30,7 @@ func (m *Module) ListHistory(ctx context.Context, req *mediaadminv1.ListHistoryR
 		})
 	}
 	return &mediaadminv1.ListHistoryResponse{
-		Records: records, Total: int32(total), Page: int32(page), PageSize: int32(pageSize),
+		Records: records, Total: clampInt32(total), Page: clampInt32(page), PageSize: clampInt32(pageSize),
 	}, nil
 }
 

@@ -430,7 +430,7 @@ func (s *Store) ImportBookFile(ctx context.Context, bookID, filePath, libraryRoo
 func unlinkIfUnderRoot(path, root string) error {
 	abs, err := pathUnderRoot(path, root)
 	if err != nil {
-		return nil
+		return nil //nolint:nilerr // a path outside the library root is deliberately left untouched, not an error
 	}
 	if err := os.Remove(abs); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("unlink %q: %w", abs, err)

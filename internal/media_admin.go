@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
 
 	"google.golang.org/grpc/codes"
@@ -10,6 +11,17 @@ import (
 
 	mediaadminv1 "github.com/Muxcore-Media/contracts-media-admin/gen/muxcore/media/admin/v1"
 )
+
+// clampInt32 converts n to int32, saturating at the int32 bounds.
+func clampInt32(n int) int32 {
+	if n > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if n < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int32(n) //nolint:gosec // bounds checked above
+}
 
 func (m *Module) GetMediaTypeInfo(_ context.Context, _ *mediaadminv1.GetMediaTypeInfoRequest) (*mediaadminv1.GetMediaTypeInfoResponse, error) {
 	return &mediaadminv1.GetMediaTypeInfoResponse{
@@ -43,8 +55,8 @@ func (m *Module) ListItems(ctx context.Context, req *mediaadminv1.ListItemsReque
 	offset := (page - 1) * pageSize
 	if offset >= total {
 		return &mediaadminv1.ListItemsResponse{
-			Items: []*mediaadminv1.MediaItem{}, Total: int32(total),
-			Page: int32(page), PageSize: int32(pageSize),
+			Items: []*mediaadminv1.MediaItem{}, Total: clampInt32(total),
+			Page: clampInt32(page), PageSize: clampInt32(pageSize),
 		}, nil
 	}
 	end := offset + pageSize
@@ -56,7 +68,7 @@ func (m *Module) ListItems(ctx context.Context, req *mediaadminv1.ListItemsReque
 		out = append(out, m.authorToMediaItem(ctx, a))
 	}
 	return &mediaadminv1.ListItemsResponse{
-		Items: out, Total: int32(total), Page: int32(page), PageSize: int32(pageSize),
+		Items: out, Total: clampInt32(total), Page: clampInt32(page), PageSize: clampInt32(pageSize),
 	}, nil
 }
 

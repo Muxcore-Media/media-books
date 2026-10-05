@@ -50,8 +50,8 @@ func (m *Module) handleAddAuthorHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Name      string `json:"name"`
 		Monitored *bool  `json:"monitored"`
+		Name      string `json:"name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		http.Error(w, `{"error":"invalid json body"}`, http.StatusBadRequest)
@@ -153,10 +153,10 @@ func (m *Module) handleAddBookHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
+		Monitored *bool  `json:"monitored"`
 		Title     string `json:"title"`
 		ISBN      string `json:"isbn"`
 		Year      int32  `json:"year"`
-		Monitored *bool  `json:"monitored"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		http.Error(w, `{"error":"invalid json body"}`, http.StatusBadRequest)

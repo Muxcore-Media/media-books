@@ -333,8 +333,8 @@ func (s *bookServer) ScanLibrary(ctx context.Context, _ *booksv1.ScanLibraryRequ
 		return nil, err
 	}
 	return &booksv1.ScanLibraryResponse{
-		FilesFound: int32(res.FilesFound), FilesImported: int32(res.FilesImported),
-		FilesSkipped: int32(res.FilesSkipped), FilesRemoved: int32(res.FilesRemoved),
+		FilesFound: clampInt32(res.FilesFound), FilesImported: clampInt32(res.FilesImported),
+		FilesSkipped: clampInt32(res.FilesSkipped), FilesRemoved: clampInt32(res.FilesRemoved),
 	}, nil
 }
 
@@ -371,7 +371,7 @@ func (s *bookServer) ListMissing(ctx context.Context, req *booksv1.ListMissingRe
 		})
 	}
 	return &booksv1.ListMissingResponse{
-		Items: out, Total: int32(total), Page: int32(page), PageSize: int32(pageSize),
+		Items: out, Total: clampInt32(total), Page: clampInt32(page), PageSize: clampInt32(pageSize),
 	}, nil
 }
 
